@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.History
@@ -51,6 +52,7 @@ private val CATEGORIES_PANEL_WIDTH = 260.dp
 fun HomeScreen(
     onStreamSelected: (Stream) -> Unit,
     onNavigateToFavorites: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -73,9 +75,16 @@ fun HomeScreen(
                     MainMenuItem.VOD -> state.selectedContentType == ContentType.VOD
                     MainMenuItem.SERIES -> state.selectedContentType == ContentType.SERIES
                     MainMenuItem.REFRESH -> false
+                    MainMenuItem.SETTINGS -> false
                 }
                 Surface(
-                    onClick = { viewModel.selectMainItem(item) },
+                    onClick = {
+                        if (item == MainMenuItem.SETTINGS) {
+                            onNavigateToSettings()
+                        } else {
+                            viewModel.selectMainItem(item)
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     colors = ClickableSurfaceDefaults.colors(
                         containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
@@ -93,6 +102,7 @@ fun HomeScreen(
                                 MainMenuItem.VOD -> Icons.Filled.Home
                                 MainMenuItem.SERIES -> Icons.Filled.List
                                 MainMenuItem.REFRESH -> Icons.Filled.Refresh
+                                MainMenuItem.SETTINGS -> Icons.Filled.Settings
                             },
                             contentDescription = item.name,
                             modifier = Modifier.size(28.dp)

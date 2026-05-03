@@ -23,6 +23,7 @@ class CredentialsRepositoryImpl @Inject constructor(
         val PASSWORD = stringPreferencesKey("password")
         val PROVIDER_TYPE = stringPreferencesKey("provider_type")
         val M3U_SOURCE = stringPreferencesKey("m3u_source")
+        val THEME = stringPreferencesKey("theme")
     }
 
     override fun getCredentials(): Flow<Credentials?> = dataStore.data.map { prefs ->
@@ -34,6 +35,14 @@ class CredentialsRepositoryImpl @Inject constructor(
         } ?: ProviderType.XTREAM
         val m3uSource = prefs[Keys.M3U_SOURCE]
         Credentials(server, username, password, providerType, m3uSource)
+    }
+
+    override fun getTheme(): Flow<String> = dataStore.data.map { prefs -> prefs[Keys.THEME] ?: "LIGHT" }
+
+    override suspend fun saveTheme(theme: String) {
+        dataStore.edit { prefs ->
+            prefs[Keys.THEME] = theme
+        }
     }
 
     override suspend fun saveCredentials(credentials: Credentials) {

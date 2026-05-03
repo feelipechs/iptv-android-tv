@@ -25,7 +25,7 @@ enum class Panel {
 }
 
 enum class MainMenuItem {
-    LIVE, VOD, SERIES, REFRESH
+    LIVE, VOD, SERIES, REFRESH, SETTINGS
 }
 
 const val FAVORITES_CATEGORY_ID = "favorites_special"
@@ -276,6 +276,7 @@ class HomeViewModel @Inject constructor(
             MainMenuItem.VOD -> selectContentType(ContentType.VOD)
             MainMenuItem.SERIES -> selectContentType(ContentType.SERIES)
             MainMenuItem.REFRESH -> refresh()
+            MainMenuItem.SETTINGS -> {}
         }
     }
 

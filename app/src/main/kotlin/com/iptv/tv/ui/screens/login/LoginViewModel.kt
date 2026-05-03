@@ -23,6 +23,11 @@ data class LoginUiState(
     val m3uSource: String = "",
     val isLoading: Boolean = false,
     val error: String? = null,
+    // FIX: separado em dois estados distintos:
+    // - isAlreadyLoggedIn: credencial existe, mas usuário não acabou de fazer login agora
+    //   (usado apenas para pré-preencher campos, não dispara navegação)
+    // - isLoggedIn: usuário acabou de logar com sucesso agora (dispara navegação)
+    val isAlreadyLoggedIn: Boolean = false,
     val isLoggedIn: Boolean = false
 )
 
@@ -39,13 +44,17 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             val saved = credentialsRepository.getCredentials().first()
             if (saved != null) {
+                // FIX: seta isAlreadyLoggedIn=true mas isLoggedIn=false
+                // Assim a LoginScreen usada em LoginEdit não navega automaticamente,
+                // mas os campos são pré-preenchidos para o usuário editar.
                 _uiState.value = LoginUiState(
                     providerType = saved.providerType,
                     server = saved.server,
                     username = saved.username,
                     password = saved.password,
                     m3uSource = saved.m3uSource ?: "",
-                    isLoggedIn = true
+                    isAlreadyLoggedIn = true,
+                    isLoggedIn = false
                 )
             }
         }
@@ -99,6 +108,7 @@ class LoginViewModel @Inject constructor(
             contentRepository.validateCredentials(credentials)
                 .onSuccess {
                     credentialsRepository.saveCredentials(credentials)
+                    // FIX: isLoggedIn=true só depois do login efetivo
                     _uiState.value = _uiState.value.copy(isLoading = false, isLoggedIn = true)
                 }
                 .onFailure { e ->
@@ -126,7 +136,6 @@ class LoginViewModel @Inject constructor(
             val finalSource = if (isUrl) {
                 source
             } else {
-                // Arquivo local - tenta obter o path real do content URI
                 try {
                     val uri = Uri.parse(source)
                     android.util.Log.d("LoginViewModel", "loginM3u: parsing URI scheme=${uri.scheme}")
@@ -151,6 +160,7 @@ class LoginViewModel @Inject constructor(
             contentRepository.validateCredentials(validationCreds)
                 .onSuccess {
                     credentialsRepository.saveCredentials(credentials)
+                    // FIX: isLoggedIn=true só depois do login efetivo
                     _uiState.value = _uiState.value.copy(isLoading = false, isLoggedIn = true)
                 }
                 .onFailure { e ->

@@ -30,10 +30,13 @@ import com.iptv.tv.domain.model.ProviderType
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    onBack: (() -> Unit)? = null
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // FIX: observa apenas isLoggedIn (login feito agora), nunca isAlreadyLoggedIn.
+    // Isso impede que LoginEdit navegue automaticamente ao abrir quando já há credenciais salvas.
     LaunchedEffect(state.isLoggedIn) {
         if (state.isLoggedIn) onLoginSuccess()
     }
@@ -58,6 +61,27 @@ fun LoginScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.width(480.dp)
         ) {
+            if (onBack != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    Surface(
+                        onClick = onBack,
+                        colors = ClickableSurfaceDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Text(
+                            text = "← Cancelar",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                }
+            }
+
             Text(
                 text = "IPTV Player",
                 style = MaterialTheme.typography.headlineLarge

@@ -7,6 +7,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.iptv.tv.ui.IPTVNavHost
+import com.iptv.tv.ui.MainViewModel
 import com.iptv.tv.ui.theme.IPTVTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -15,7 +16,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            IPTVTheme {
+            val viewModel: MainViewModel = hiltViewModel()
+            val theme by viewModel.theme.collectAsState()
+            IPTVTheme(theme = theme) {
                 IPTVNavHost()
             }
         }
