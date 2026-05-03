@@ -42,7 +42,9 @@ data class HomeUiState(
     val error: String? = null,
     val activePanel: Panel = Panel.Categories,
     val favoriteCount: Int = 0,
-    val historyCount: Int = 0
+    val historyCount: Int = 0,
+    val categorySearch: String = "",
+    val streamSearch: String = ""
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -67,6 +69,8 @@ class HomeViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     private val _favoriteCount = MutableStateFlow(0)
     private val _historyCount = MutableStateFlow(0)
+    private val _categorySearch = MutableStateFlow("")
+    private val _streamSearch = MutableStateFlow("")
 
     val pinnedCategories: StateFlow<Set<String>> = _pinnedCategories.asStateFlow()
 
@@ -125,6 +129,8 @@ class HomeViewModel @Inject constructor(
         _error,
         _favoriteCount,
         _historyCount,
+        _categorySearch,
+        _streamSearch,
         categoriesFlow,
         streamsFlow
     ) { values ->
@@ -138,10 +144,12 @@ class HomeViewModel @Inject constructor(
         val error = values[7] as String?
         val favCount = values[8] as Int
         val histCount = values[9] as Int
+        val categorySearch = values[10] as String
+        val streamSearch = values[11] as String
         @Suppress("UNCHECKED_CAST")
-        val categories = values[10] as List<Category>
+        val categories = values[12] as List<Category>
         @Suppress("UNCHECKED_CAST")
-        val streams = values[11] as List<Stream>
+        val streams = values[13] as List<Stream>
 
         val pinned_sorted = categories.sortedByDescending { cat -> pinned.contains(cat.id) }
 
@@ -156,7 +164,9 @@ class HomeViewModel @Inject constructor(
             error = error,
             activePanel = activePanel,
             favoriteCount = favCount,
-            historyCount = histCount
+            historyCount = histCount,
+            categorySearch = categorySearch,
+            streamSearch = streamSearch
         )
     }
         .stateIn(
@@ -205,11 +215,22 @@ class HomeViewModel @Inject constructor(
     }
 
     fun selectCategory(categoryId: String) {
+        if (_selectedCategoryId.value != categoryId) {
+            _streamSearch.value = ""
+        }
         _selectedCategoryId.value = categoryId
         _activePanel.value = Panel.Content
         if (categoryId != FAVORITES_CATEGORY_ID && categoryId != RECENTS_CATEGORY_ID) {
             refreshStreams()
         }
+    }
+
+    fun onCategorySearchChange(query: String) {
+        _categorySearch.value = query
+    }
+
+    fun onStreamSearchChange(query: String) {
+        _streamSearch.value = query
     }
 
     fun selectCategoryAndShowContent(categoryId: String) {

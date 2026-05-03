@@ -11,6 +11,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
@@ -30,6 +32,8 @@ import kotlinx.coroutines.flow.Flow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -50,13 +54,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-
-    var categorySearch by remember { mutableStateOf("") }
-    var streamSearch by remember { mutableStateOf("") }
-
-    LaunchedEffect(state.selectedCategoryId) {
-        streamSearch = ""
-    }
+    val localFocusManager = LocalFocusManager.current
 
     Row(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
 
@@ -192,19 +190,26 @@ fun HomeScreen(
                     .padding(horizontal = 8.dp)
             ) {
                 BasicTextField(
-                    value = categorySearch,
-                    onValueChange = { categorySearch = it },
+                    value = state.categorySearch,
+                    onValueChange = { viewModel.onCategorySearchChange(it) },
                     modifier = Modifier.fillMaxSize(),
+                    singleLine = true,
                     textStyle = MaterialTheme.typography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.onSurface
                     ),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Search
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onSearch = { localFocusManager.clearFocus() }
+                    ),
                     decorationBox = { innerTextField ->
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.CenterStart
                         ) {
-                            if (categorySearch.isEmpty()) {
+                            if (state.categorySearch.isEmpty()) {
                                 Text(
                                     text = "Buscar categoria...",
                                     style = MaterialTheme.typography.bodyMedium,
@@ -238,7 +243,7 @@ fun HomeScreen(
                     )
                 }
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    items(state.categories.filter { it.name.contains(categorySearch, ignoreCase = true) }) { category ->
+                    items(state.categories.filter { it.name.contains(state.categorySearch, ignoreCase = true) }) { category ->
                         CategoryItem(
                             category = category,
                             isSelected = category.id == state.selectedCategoryId,
@@ -292,19 +297,26 @@ fun HomeScreen(
                                 .padding(horizontal = 8.dp)
                         ) {
                             BasicTextField(
-                                value = streamSearch,
-                                onValueChange = { streamSearch = it },
+                                value = state.streamSearch,
+                                onValueChange = { viewModel.onStreamSearchChange(it) },
                                 modifier = Modifier.fillMaxSize(),
+                                singleLine = true,
                                 textStyle = MaterialTheme.typography.bodyMedium.copy(
                                     color = MaterialTheme.colorScheme.onSurface
                                 ),
                                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                keyboardOptions = KeyboardOptions(
+                                    imeAction = ImeAction.Search
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onSearch = { localFocusManager.clearFocus() }
+                                ),
                                 decorationBox = { innerTextField ->
                                     Box(
                                         modifier = Modifier.fillMaxSize(),
                                         contentAlignment = Alignment.CenterStart
                                     ) {
-                                        if (streamSearch.isEmpty()) {
+                                        if (state.streamSearch.isEmpty()) {
                                             Text(
                                                 text = "Buscar stream...",
                                                 style = MaterialTheme.typography.bodyMedium,
@@ -326,7 +338,7 @@ fun HomeScreen(
                         }
                         if (state.selectedContentType == ContentType.LIVE || state.selectedCategoryId == "favorites_special" || state.selectedCategoryId == "recents_special") {
                             LiveStreamGrid(
-                                streams = state.streams.filter { it.name.contains(streamSearch, ignoreCase = true) },
+streams = state.streams.filter { it.name.contains(state.streamSearch, ignoreCase = true) },
                                 onStreamSelected = {
                                     viewModel.recordToHistory(it)
                                     onStreamSelected(it)
@@ -335,7 +347,7 @@ fun HomeScreen(
                                 isFavorite = { viewModel.isFavorite(it) }
                             )
                         } else {
-                            VodStreamGrid(streams = state.streams.filter { it.name.contains(streamSearch, ignoreCase = true) }, onStreamSelected = {
+                            VodStreamGrid(streams = state.streams.filter { it.name.contains(state.streamSearch, ignoreCase = true) }, onStreamSelected = {
                                 viewModel.recordToHistory(it)
                                 onStreamSelected(it)
                             })
