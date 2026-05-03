@@ -24,6 +24,10 @@ enum class Panel {
     Content
 }
 
+enum class MainMenuItem {
+    LIVE, VOD, SERIES, FAVORITES, REFRESH
+}
+
 data class HomeUiState(
     val selectedContentType: ContentType = ContentType.LIVE,
     val selectedCategoryId: String? = null,
@@ -35,7 +39,8 @@ data class HomeUiState(
     val error: String? = null,
     val activePanel: Panel = Panel.Categories,
     val favoriteCount: Int = 0,
-    val historyCount: Int = 0
+    val historyCount: Int = 0,
+    val isFavoritesMode: Boolean = false
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -60,6 +65,7 @@ class HomeViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     private val _favoriteCount = MutableStateFlow(0)
     private val _historyCount = MutableStateFlow(0)
+    private val _isFavoritesMode = MutableStateFlow(false)
 
     val pinnedCategories: StateFlow<Set<String>> = _pinnedCategories.asStateFlow()
 
@@ -87,6 +93,7 @@ class HomeViewModel @Inject constructor(
         _error,
         _favoriteCount,
         _historyCount,
+        _isFavoritesMode,
         categoriesFlow,
         streamsFlow
     ) { values ->
@@ -100,10 +107,11 @@ class HomeViewModel @Inject constructor(
         val error = values[7] as String?
         val favCount = values[8] as Int
         val histCount = values[9] as Int
+        val isFavoritesMode = values[10] as Boolean
         @Suppress("UNCHECKED_CAST")
-        val categories = values[10] as List<Category>
+        val categories = values[11] as List<Category>
         @Suppress("UNCHECKED_CAST")
-        val streams = values[11] as List<Stream>
+        val streams = values[12] as List<Stream>
 
         val pinned_sorted = categories.sortedByDescending { cat -> pinned.contains(cat.id) }
 
@@ -118,7 +126,8 @@ class HomeViewModel @Inject constructor(
             error = error,
             activePanel = activePanel,
             favoriteCount = favCount,
-            historyCount = histCount
+            historyCount = histCount,
+            isFavoritesMode = isFavoritesMode
         )
     }
         .stateIn(
@@ -206,6 +215,16 @@ class HomeViewModel @Inject constructor(
             }
                 .onFailure { e -> _error.value = e.message }
             _isRefreshing.value = false
+        }
+    }
+
+    fun selectMainItem(item: MainMenuItem) {
+        when (item) {
+            MainMenuItem.LIVE -> { _isFavoritesMode.value = false; selectContentType(ContentType.LIVE) }
+            MainMenuItem.VOD -> { _isFavoritesMode.value = false; selectContentType(ContentType.VOD) }
+            MainMenuItem.SERIES -> { _isFavoritesMode.value = false; selectContentType(ContentType.SERIES) }
+            MainMenuItem.FAVORITES -> { _isFavoritesMode.value = true; _activePanel.value = Panel.Categories }
+            MainMenuItem.REFRESH -> refresh()
         }
     }
 
