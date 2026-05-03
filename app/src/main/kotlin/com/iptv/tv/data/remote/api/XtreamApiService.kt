@@ -4,6 +4,7 @@ import com.iptv.tv.data.remote.dto.CategoryDto
 import com.iptv.tv.data.remote.dto.LiveStreamDto
 import com.iptv.tv.data.remote.dto.SeriesStreamDto
 import com.iptv.tv.data.remote.dto.UserInfoResponse
+import com.iptv.tv.data.remote.dto.VodInfoDto
 import com.iptv.tv.data.remote.dto.VodStreamDto
 import retrofit2.http.GET
 import retrofit2.http.Query
@@ -60,4 +61,12 @@ interface XtreamApiService {
         @Query("action") action: String = "get_series",
         @Query("category_id") categoryId: String
     ): List<SeriesStreamDto>
+
+    @GET("player_api.php")
+    suspend fun getVodInfo(
+        @Query("username") username: String,
+        @Query("password") password: String,
+        @Query("action") action: String = "get_vod_info",
+        @Query("vod_id") vodId: String
+    ): VodInfoDto
 }

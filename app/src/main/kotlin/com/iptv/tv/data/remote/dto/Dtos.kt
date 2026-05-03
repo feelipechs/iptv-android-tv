@@ -66,3 +66,30 @@ data class ServerInfo(
     @SerializedName("rtmp_port") val rtmpPort: String?,
     @SerializedName("timezone") val timezone: String
 )
+
+data class VodInfoDto(
+    @SerializedName("info") val info: VodInfo?,
+    @SerializedName("movie_data") val movieData: VodMovieData?
+)
+
+data class VodInfo(
+    @SerializedName("name") val name: String?,
+    @SerializedName("o_name") val originalName: String?,
+    @SerializedName("cover_big") val coverBig: String?,
+    @SerializedName("movie_image") val movieImage: String?,
+    @SerializedName("description") val description: String?,
+    @SerializedName("plot") val plot: String?,
+    @SerializedName("cast") val cast: String?,
+    @SerializedName("director") val director: String?,
+    @SerializedName("genre") val genre: String?,
+    @SerializedName("release_date") val releaseDate: String?,
+    @SerializedName("releasedate") val releaseDate2: String?,
+    @SerializedName("rating") val rating: String?,
+    @SerializedName("duration") val duration: String?
+)
+
+data class VodMovieData(
+    @SerializedName("stream_id") val streamId: Int?,
+    @SerializedName("name") val name: String?,
+    @SerializedName("container_extension") val containerExtension: String?
+)
