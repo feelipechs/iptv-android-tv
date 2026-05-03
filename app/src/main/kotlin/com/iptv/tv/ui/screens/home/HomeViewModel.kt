@@ -25,8 +25,11 @@ enum class Panel {
 }
 
 enum class MainMenuItem {
-    LIVE, VOD, SERIES, FAVORITES, REFRESH
+    LIVE, VOD, SERIES, REFRESH
 }
+
+const val FAVORITES_CATEGORY_ID = "favorites_special"
+const val RECENTS_CATEGORY_ID = "recents_special"
 
 data class HomeUiState(
     val selectedContentType: ContentType = ContentType.LIVE,
@@ -39,8 +42,7 @@ data class HomeUiState(
     val error: String? = null,
     val activePanel: Panel = Panel.Categories,
     val favoriteCount: Int = 0,
-    val historyCount: Int = 0,
-    val isFavoritesMode: Boolean = false
+    val historyCount: Int = 0
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -65,7 +67,6 @@ class HomeViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     private val _favoriteCount = MutableStateFlow(0)
     private val _historyCount = MutableStateFlow(0)
-    private val _isFavoritesMode = MutableStateFlow(false)
 
     val pinnedCategories: StateFlow<Set<String>> = _pinnedCategories.asStateFlow()
 
@@ -76,9 +77,40 @@ class HomeViewModel @Inject constructor(
         _selectedCategoryId,
         _selectedContentType
     ) { categoryId, contentType -> categoryId to contentType }
-        .filter { (categoryId, _) -> categoryId != null }
         .flatMapLatest { (categoryId, contentType) ->
-            getStreamsUseCase(categoryId!!, contentType)
+            when (categoryId) {
+                FAVORITES_CATEGORY_ID -> {
+                    favoritesRepository.getFavoritesByType(contentType).map { favorites ->
+                        favorites.map { fav ->
+                            Stream(
+                                id = fav.streamId,
+                                name = fav.name,
+                                categoryId = fav.categoryId,
+                                type = fav.type,
+                                streamUrl = fav.streamUrl,
+                                posterUrl = fav.posterUrl
+                            )
+                        }
+                    }
+                }
+                RECENTS_CATEGORY_ID -> {
+                    watchHistoryRepository.getRecentHistory(20).map { history ->
+                        history.map { entry ->
+                            Stream(
+                                id = entry.streamId,
+                                name = entry.name,
+                                categoryId = entry.categoryId,
+                                type = entry.type,
+                                streamUrl = entry.streamUrl,
+                                posterUrl = entry.posterUrl,
+                                progress = entry.progress
+                            )
+                        }
+                    }
+                }
+                null -> flowOf(emptyList())
+                else -> getStreamsUseCase(categoryId, contentType)
+            }
         }
         .onStart { emit(emptyList()) }
 
@@ -93,7 +125,6 @@ class HomeViewModel @Inject constructor(
         _error,
         _favoriteCount,
         _historyCount,
-        _isFavoritesMode,
         categoriesFlow,
         streamsFlow
     ) { values ->
@@ -107,11 +138,10 @@ class HomeViewModel @Inject constructor(
         val error = values[7] as String?
         val favCount = values[8] as Int
         val histCount = values[9] as Int
-        val isFavoritesMode = values[10] as Boolean
         @Suppress("UNCHECKED_CAST")
-        val categories = values[11] as List<Category>
+        val categories = values[10] as List<Category>
         @Suppress("UNCHECKED_CAST")
-        val streams = values[12] as List<Stream>
+        val streams = values[11] as List<Stream>
 
         val pinned_sorted = categories.sortedByDescending { cat -> pinned.contains(cat.id) }
 
@@ -126,8 +156,7 @@ class HomeViewModel @Inject constructor(
             error = error,
             activePanel = activePanel,
             favoriteCount = favCount,
-            historyCount = histCount,
-            isFavoritesMode = isFavoritesMode
+            historyCount = histCount
         )
     }
         .stateIn(
@@ -178,7 +207,9 @@ class HomeViewModel @Inject constructor(
     fun selectCategory(categoryId: String) {
         _selectedCategoryId.value = categoryId
         _activePanel.value = Panel.Content
-        refreshStreams()
+        if (categoryId != FAVORITES_CATEGORY_ID && categoryId != RECENTS_CATEGORY_ID) {
+            refreshStreams()
+        }
     }
 
     fun selectCategoryAndShowContent(categoryId: String) {
@@ -220,10 +251,9 @@ class HomeViewModel @Inject constructor(
 
     fun selectMainItem(item: MainMenuItem) {
         when (item) {
-            MainMenuItem.LIVE -> { _isFavoritesMode.value = false; selectContentType(ContentType.LIVE) }
-            MainMenuItem.VOD -> { _isFavoritesMode.value = false; selectContentType(ContentType.VOD) }
-            MainMenuItem.SERIES -> { _isFavoritesMode.value = false; selectContentType(ContentType.SERIES) }
-            MainMenuItem.FAVORITES -> { _isFavoritesMode.value = true; _activePanel.value = Panel.Categories }
+            MainMenuItem.LIVE -> selectContentType(ContentType.LIVE)
+            MainMenuItem.VOD -> selectContentType(ContentType.VOD)
+            MainMenuItem.SERIES -> selectContentType(ContentType.SERIES)
             MainMenuItem.REFRESH -> refresh()
         }
     }
@@ -254,5 +284,15 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             watchHistoryRepository.addToHistory(stream, 0f)
         }
+    }
+
+    fun toggleFavorite(stream: Stream) {
+        viewModelScope.launch {
+            favoritesRepository.toggleFavorite(stream)
+        }
+    }
+
+    fun isFavorite(streamId: String): Flow<Boolean> {
+        return favoritesRepository.isFavorite(streamId)
     }
 }

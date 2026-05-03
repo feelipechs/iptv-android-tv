@@ -14,6 +14,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -200,6 +203,8 @@ private fun StyledTextField(
         MaterialTheme.colorScheme.onSurfaceVariant
     }
 
+    val focusRequester = remember { FocusRequester() }
+
     Column(modifier = modifier) {
         Text(
             text = label,
@@ -213,7 +218,7 @@ private fun StyledTextField(
                 .fillMaxWidth()
                 .height(56.dp)
                 .border(BorderStroke(1.dp, borderColor), RoundedCornerShape(8.dp))
-                .clickable { onFocusChange(true) }
+                .clickable { focusRequester.requestFocus() }
                 .padding(horizontal = 12.dp)
         ) {
             BasicTextField(
@@ -222,7 +227,10 @@ private fun StyledTextField(
                     onValueChange(it)
                     if (!isFocused) onFocusChange(true)
                 },
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .focusRequester(focusRequester)
+                    .onFocusChanged { onFocusChange(it.isFocused) },
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     color = MaterialTheme.colorScheme.onSurface
                 ),

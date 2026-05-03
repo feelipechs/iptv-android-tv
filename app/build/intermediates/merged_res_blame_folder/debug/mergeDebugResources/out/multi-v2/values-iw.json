@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.iptv.tv.app-mergeDebugResources-66:/values-iw/values-iw.xml",
+            "outputFile": "com.iptv.tv.app-mergeDebugResources-67:/values-iw/values-iw.xml",
             "map": [
                 {
                     "source": "/home/chagas/.gradle/caches/9.0.0/transforms/1d63b6f9afdbefc22888a8acc225c4f3/transformed/leanback-1.0.0/res/values-iw/values-iw.xml",

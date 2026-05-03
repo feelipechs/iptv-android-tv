@@ -185,7 +185,7 @@ class M3UParser @Inject constructor(
         val streams = entries.mapIndexed { idx, entry ->
             val categoryName = entry.groupTitle ?: "Sem Categoria"
             Stream(
-                id = UUID.randomUUID().toString(),
+                id = UUID.nameUUIDFromBytes(entry.streamUrl.toByteArray()).toString(),
                 name = entry.name,
                 categoryId = UUID.nameUUIDFromBytes(categoryName.toByteArray()).toString(),
                 type = ContentType.LIVE,

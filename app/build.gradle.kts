@@ -107,4 +107,6 @@ dependencies {
     implementation(libs.coil.compose)
 
     implementation("androidx.leanback:leanback:1.0.0")
+
+    implementation("androidx.compose.material:material-icons-extended")
 }

@@ -433,35 +433,35 @@ public final class DaggerIPTVApp_HiltComponents_SingletonC {
 
     @IdentifierNameString
     private static final class LazyClassKeyProvider {
-      static String com_iptv_tv_ui_screens_login_LoginViewModel = "com.iptv.tv.ui.screens.login.LoginViewModel";
+      static String com_iptv_tv_ui_screens_player_PlayerViewModel = "com.iptv.tv.ui.screens.player.PlayerViewModel";
 
       static String com_iptv_tv_ui_screens_category_CategoryViewModel = "com.iptv.tv.ui.screens.category.CategoryViewModel";
 
-      static String com_iptv_tv_ui_screens_content_ContentViewModel = "com.iptv.tv.ui.screens.content.ContentViewModel";
-
-      static String com_iptv_tv_ui_screens_player_PlayerViewModel = "com.iptv.tv.ui.screens.player.PlayerViewModel";
-
       static String com_iptv_tv_ui_screens_home_HomeViewModel = "com.iptv.tv.ui.screens.home.HomeViewModel";
+
+      static String com_iptv_tv_ui_screens_content_ContentViewModel = "com.iptv.tv.ui.screens.content.ContentViewModel";
 
       static String com_iptv_tv_ui_screens_favorites_FavoritesViewModel = "com.iptv.tv.ui.screens.favorites.FavoritesViewModel";
 
-      @KeepFieldType
-      LoginViewModel com_iptv_tv_ui_screens_login_LoginViewModel2;
-
-      @KeepFieldType
-      CategoryViewModel com_iptv_tv_ui_screens_category_CategoryViewModel2;
-
-      @KeepFieldType
-      ContentViewModel com_iptv_tv_ui_screens_content_ContentViewModel2;
+      static String com_iptv_tv_ui_screens_login_LoginViewModel = "com.iptv.tv.ui.screens.login.LoginViewModel";
 
       @KeepFieldType
       PlayerViewModel com_iptv_tv_ui_screens_player_PlayerViewModel2;
 
       @KeepFieldType
+      CategoryViewModel com_iptv_tv_ui_screens_category_CategoryViewModel2;
+
+      @KeepFieldType
       HomeViewModel com_iptv_tv_ui_screens_home_HomeViewModel2;
 
       @KeepFieldType
+      ContentViewModel com_iptv_tv_ui_screens_content_ContentViewModel2;
+
+      @KeepFieldType
       FavoritesViewModel com_iptv_tv_ui_screens_favorites_FavoritesViewModel2;
+
+      @KeepFieldType
+      LoginViewModel com_iptv_tv_ui_screens_login_LoginViewModel2;
     }
   }
 
@@ -535,35 +535,35 @@ public final class DaggerIPTVApp_HiltComponents_SingletonC {
 
     @IdentifierNameString
     private static final class LazyClassKeyProvider {
-      static String com_iptv_tv_ui_screens_login_LoginViewModel = "com.iptv.tv.ui.screens.login.LoginViewModel";
+      static String com_iptv_tv_ui_screens_category_CategoryViewModel = "com.iptv.tv.ui.screens.category.CategoryViewModel";
 
       static String com_iptv_tv_ui_screens_favorites_FavoritesViewModel = "com.iptv.tv.ui.screens.favorites.FavoritesViewModel";
+
+      static String com_iptv_tv_ui_screens_login_LoginViewModel = "com.iptv.tv.ui.screens.login.LoginViewModel";
+
+      static String com_iptv_tv_ui_screens_home_HomeViewModel = "com.iptv.tv.ui.screens.home.HomeViewModel";
 
       static String com_iptv_tv_ui_screens_player_PlayerViewModel = "com.iptv.tv.ui.screens.player.PlayerViewModel";
 
       static String com_iptv_tv_ui_screens_content_ContentViewModel = "com.iptv.tv.ui.screens.content.ContentViewModel";
 
-      static String com_iptv_tv_ui_screens_home_HomeViewModel = "com.iptv.tv.ui.screens.home.HomeViewModel";
+      @KeepFieldType
+      CategoryViewModel com_iptv_tv_ui_screens_category_CategoryViewModel2;
 
-      static String com_iptv_tv_ui_screens_category_CategoryViewModel = "com.iptv.tv.ui.screens.category.CategoryViewModel";
+      @KeepFieldType
+      FavoritesViewModel com_iptv_tv_ui_screens_favorites_FavoritesViewModel2;
 
       @KeepFieldType
       LoginViewModel com_iptv_tv_ui_screens_login_LoginViewModel2;
 
       @KeepFieldType
-      FavoritesViewModel com_iptv_tv_ui_screens_favorites_FavoritesViewModel2;
+      HomeViewModel com_iptv_tv_ui_screens_home_HomeViewModel2;
 
       @KeepFieldType
       PlayerViewModel com_iptv_tv_ui_screens_player_PlayerViewModel2;
 
       @KeepFieldType
       ContentViewModel com_iptv_tv_ui_screens_content_ContentViewModel2;
-
-      @KeepFieldType
-      HomeViewModel com_iptv_tv_ui_screens_home_HomeViewModel2;
-
-      @KeepFieldType
-      CategoryViewModel com_iptv_tv_ui_screens_category_CategoryViewModel2;
     }
 
     private static final class SwitchingProvider<T> implements Provider<T> {
