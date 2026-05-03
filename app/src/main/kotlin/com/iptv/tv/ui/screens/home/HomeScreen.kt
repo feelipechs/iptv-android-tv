@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Home
@@ -18,6 +20,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.filled.Favorite
 
 import androidx.compose.material3.CircularProgressIndicator
@@ -47,6 +50,13 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    var categorySearch by remember { mutableStateOf("") }
+    var streamSearch by remember { mutableStateOf("") }
+
+    LaunchedEffect(state.selectedCategoryId) {
+        streamSearch = ""
+    }
 
     Row(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
 
@@ -173,6 +183,48 @@ fun HomeScreen(
             Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.surfaceVariant))
             Spacer(Modifier.height(4.dp))
 
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 8.dp)
+            ) {
+                BasicTextField(
+                    value = categorySearch,
+                    onValueChange = { categorySearch = it },
+                    modifier = Modifier.fillMaxSize(),
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    decorationBox = { innerTextField ->
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            if (categorySearch.isEmpty()) {
+                                Text(
+                                    text = "Buscar categoria...",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+                Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
             if (state.isLoadingCategories && state.categories.isEmpty()) {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Text("Carregando...", style = MaterialTheme.typography.bodySmall,
@@ -186,7 +238,7 @@ fun HomeScreen(
                     )
                 }
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    items(state.categories) { category ->
+                    items(state.categories.filter { it.name.contains(categorySearch, ignoreCase = true) }) { category ->
                         CategoryItem(
                             category = category,
                             isSelected = category.id == state.selectedCategoryId,
@@ -228,22 +280,67 @@ fun HomeScreen(
                              color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                state.selectedContentType == ContentType.LIVE || state.selectedCategoryId == "favorites_special" || state.selectedCategoryId == "recents_special" -> {
-                    LiveStreamGrid(
-                        streams = state.streams,
-                        onStreamSelected = {
-                            viewModel.recordToHistory(it)
-                            onStreamSelected(it)
-                        },
-                        onToggleFavorite = { viewModel.toggleFavorite(it) },
-                        isFavorite = { viewModel.isFavorite(it) }
-                    )
-                }
                 else -> {
-                    VodStreamGrid(streams = state.streams, onStreamSelected = {
-                        viewModel.recordToHistory(it)
-                        onStreamSelected(it)
-                    })
+                    Column {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp)
+                                .height(40.dp)
+                                .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.surface)
+                                .padding(horizontal = 8.dp)
+                        ) {
+                            BasicTextField(
+                                value = streamSearch,
+                                onValueChange = { streamSearch = it },
+                                modifier = Modifier.fillMaxSize(),
+                                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSurface
+                                ),
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                decorationBox = { innerTextField ->
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.CenterStart
+                                    ) {
+                                        if (streamSearch.isEmpty()) {
+                                            Text(
+                                                text = "Buscar stream...",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                            )
+                                        }
+                                        innerTextField()
+                                    }
+                                }
+                            )
+                            Icon(
+                                imageVector = Icons.Outlined.Search,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (state.selectedContentType == ContentType.LIVE || state.selectedCategoryId == "favorites_special" || state.selectedCategoryId == "recents_special") {
+                            LiveStreamGrid(
+                                streams = state.streams.filter { it.name.contains(streamSearch, ignoreCase = true) },
+                                onStreamSelected = {
+                                    viewModel.recordToHistory(it)
+                                    onStreamSelected(it)
+                                },
+                                onToggleFavorite = { viewModel.toggleFavorite(it) },
+                                isFavorite = { viewModel.isFavorite(it) }
+                            )
+                        } else {
+                            VodStreamGrid(streams = state.streams.filter { it.name.contains(streamSearch, ignoreCase = true) }, onStreamSelected = {
+                                viewModel.recordToHistory(it)
+                                onStreamSelected(it)
+                            })
+                        }
+                    }
                 }
             }
         }
