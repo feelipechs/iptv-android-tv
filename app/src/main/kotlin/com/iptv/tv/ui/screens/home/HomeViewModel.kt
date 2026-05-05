@@ -307,6 +307,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun recordToHistory(stream: Stream) {
+        if (stream.type == ContentType.SERIES) return
         viewModelScope.launch {
             watchHistoryRepository.addToHistory(stream, 0f)
         }
