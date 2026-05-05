@@ -9,6 +9,7 @@ import com.iptv.tv.data.remote.api.XtreamApiService
 import com.iptv.tv.data.remote.dto.LiveStreamDto
 import com.iptv.tv.data.remote.dto.VodStreamDto
 import com.iptv.tv.data.remote.dto.SeriesStreamDto
+import com.iptv.tv.data.remote.dto.SeriesInfoResponse
 import com.iptv.tv.domain.model.ContentType
 import com.iptv.tv.domain.model.Credentials
 import com.iptv.tv.domain.model.Stream
@@ -110,6 +111,12 @@ class ContentRepositoryImpl @Inject constructor(
             val status = response.userInfo?.status ?: error("Resposta inválida do servidor")
             if (status != "Active") error("Conta inativa ou banida: $status")
         }
+
+    override suspend fun getSeriesInfo(seriesId: Int): SeriesInfoResponse {
+        val creds = credentialsRepository.getCredentials().first()
+            ?: error("Credenciais não encontradas")
+        return api.getSeriesInfo(creds.username, creds.password, seriesId = seriesId)
+    }
 
     // --- Mapeamentos ---
 

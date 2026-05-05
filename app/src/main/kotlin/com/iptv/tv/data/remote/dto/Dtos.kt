@@ -93,3 +93,36 @@ data class VodMovieData(
     @SerializedName("name") val name: String?,
     @SerializedName("container_extension") val containerExtension: String?
 )
+
+data class SeriesInfoResponse(
+    @SerializedName("info") val info: SeriesInfo?,
+    @SerializedName("episodes") val episodes: Map<String, List<Episode>>?
+)
+
+data class SeriesInfo(
+    @SerializedName("name") val name: String?,
+    @SerializedName("cover") val cover: String?,
+    @SerializedName("plot") val plot: String?,
+    @SerializedName("cast") val cast: String?,
+    @SerializedName("director") val director: String?,
+    @SerializedName("genre") val genre: String?,
+    @SerializedName("releaseDate") val releaseDate: String?,
+    @SerializedName("rating") val rating: String?,
+    @SerializedName("backdrop_path") val backdropPath: List<String>?
+)
+
+data class Episode(
+    @SerializedName("id") val id: Int,
+    @SerializedName("episode_num") val episodeNum: Int,
+    @SerializedName("title") val title: String?,
+    @SerializedName("season") val season: Int,
+    @SerializedName("container_extension") val containerExtension: String?,
+    @SerializedName("direct_source") val directSource: String?,
+    @SerializedName("info") val info: EpisodeInfo?
+)
+
+data class EpisodeInfo(
+    @SerializedName("releasedate") val releaseDate: String?,
+    @SerializedName("plot") val plot: String?,
+    @SerializedName("duration") val duration: String?
+)

@@ -1,5 +1,6 @@
 package com.iptv.tv.domain.repository
 
+import com.iptv.tv.data.remote.dto.SeriesInfoResponse
 import com.iptv.tv.domain.model.Category
 import com.iptv.tv.domain.model.ContentType
 import com.iptv.tv.domain.model.Credentials
@@ -23,6 +24,9 @@ interface ContentRepository {
 
     /** Valida credenciais contra o servidor */
     suspend fun validateCredentials(credentials: Credentials): Result<Unit>
+
+    /** Retorna informações detalhadas de uma série */
+    suspend fun getSeriesInfo(seriesId: Int): SeriesInfoResponse
 }
 
 interface FavoritesRepository {
@@ -41,7 +45,14 @@ interface WatchHistoryRepository {
     fun getHistoryByType(type: ContentType): Flow<List<WatchHistoryEntry>>
     fun getRecentHistory(limit: Int): Flow<List<WatchHistoryEntry>>
     fun getHistoryCount(): Flow<Int>
-    suspend fun addToHistory(stream: Stream, progress: Float = 0f)
+    suspend fun addToHistory(
+        stream: Stream,
+        progress: Float = 0f,
+        episodeNum: Int? = null,
+        episodeTitle: String? = null,
+        season: String? = null,
+        episodeUrl: String? = null
+    )
     suspend fun updateProgress(streamId: String, progress: Float)
     suspend fun clearHistory()
     suspend fun deleteHistoryEntry(streamId: String)

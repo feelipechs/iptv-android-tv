@@ -5,6 +5,7 @@ import com.iptv.tv.data.local.dao.CategoryDao
 import com.iptv.tv.data.local.dao.StreamDao
 import com.iptv.tv.data.local.entity.CategoryEntity
 import com.iptv.tv.data.local.entity.StreamEntity
+import com.iptv.tv.data.remote.dto.SeriesInfoResponse
 import com.iptv.tv.domain.model.Category
 import com.iptv.tv.domain.model.ContentType
 import com.iptv.tv.domain.model.Credentials
@@ -188,4 +189,7 @@ class M3uContentRepository @Inject constructor(
         epgChannelId = epgChannelId,
         containerExtension = containerExtension
     )
+
+    override suspend fun getSeriesInfo(seriesId: Int): SeriesInfoResponse =
+        error("Séries não são suportadas em listas M3U")
 }

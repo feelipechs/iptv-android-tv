@@ -46,5 +46,9 @@ data class WatchHistoryEntity(
     val posterUrl: String?,
     val streamUrl: String,
     val lastWatchedAt: Long = System.currentTimeMillis(),
-    val progress: Float = 0f
+    val progress: Float = 0f,
+    val lastEpisodeNum: Int? = null,
+    val lastEpisodeTitle: String? = null,
+    val lastSeason: String? = null,
+    val lastEpisodeUrl: String? = null
 )

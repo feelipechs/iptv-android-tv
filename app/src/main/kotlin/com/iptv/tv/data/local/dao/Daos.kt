@@ -1,6 +1,7 @@
 package com.iptv.tv.data.local.dao
 
 import androidx.room.*
+import android.util.Log
 import com.iptv.tv.data.local.entity.CategoryEntity
 import com.iptv.tv.data.local.entity.StreamEntity
 import com.iptv.tv.data.local.entity.FavoriteEntity
@@ -84,6 +85,10 @@ interface FavoriteDao {
     }
 }
 
+data class TableInfoEntity(
+    val name: String
+)
+
 @Dao
 interface WatchHistoryDao {
 
@@ -99,6 +104,9 @@ interface WatchHistoryDao {
     @Query("SELECT COUNT(*) FROM watch_history")
     fun getHistoryCount(): Flow<Int>
 
+    @Query("SELECT * FROM watch_history WHERE streamId = :streamId LIMIT 1")
+    suspend fun getById(streamId: String): WatchHistoryEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(history: WatchHistoryEntity)
 
@@ -112,7 +120,38 @@ interface WatchHistoryDao {
     suspend fun updateProgress(streamId: String, progress: Float, timestamp: Long = System.currentTimeMillis())
 
     @Transaction
-    suspend fun addToHistory(streamId: String, name: String, categoryId: String, type: ContentType, posterUrl: String?, streamUrl: String, progress: Float = 0f) {
-        insert(WatchHistoryEntity(streamId, name, categoryId, type, posterUrl, streamUrl, System.currentTimeMillis(), progress))
+    suspend fun addToHistory(
+        streamId: String,
+        name: String,
+        categoryId: String,
+        type: ContentType,
+        posterUrl: String?,
+        streamUrl: String,
+        progress: Float = 0f,
+        lastEpisodeNum: Int? = null,
+        lastEpisodeTitle: String? = null,
+        lastSeason: String? = null,
+        lastEpisodeUrl: String? = null
+    ) {
+        val existing = getById(streamId)
+        val entity = WatchHistoryEntity(
+            streamId = streamId,
+            name = name,
+            categoryId = categoryId,
+            type = type,
+            posterUrl = posterUrl,
+            streamUrl = streamUrl,
+            lastWatchedAt = System.currentTimeMillis(),
+            progress = progress,
+            lastEpisodeNum = lastEpisodeNum ?: existing?.lastEpisodeNum,
+            lastEpisodeTitle = lastEpisodeTitle ?: existing?.lastEpisodeTitle,
+            lastSeason = lastSeason ?: existing?.lastSeason,
+            lastEpisodeUrl = lastEpisodeUrl ?: existing?.lastEpisodeUrl
+        )
+        try {
+            insert(entity)
+        } catch (e: Exception) {
+            Log.e("DBDebug", "Insert falhou: ${e.message}", e)
+        }
     }
 }

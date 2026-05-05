@@ -3,6 +3,7 @@ package com.iptv.tv.data.remote.api
 import com.iptv.tv.data.remote.dto.CategoryDto
 import com.iptv.tv.data.remote.dto.LiveStreamDto
 import com.iptv.tv.data.remote.dto.SeriesStreamDto
+import com.iptv.tv.data.remote.dto.SeriesInfoResponse
 import com.iptv.tv.data.remote.dto.UserInfoResponse
 import com.iptv.tv.data.remote.dto.VodInfoDto
 import com.iptv.tv.data.remote.dto.VodStreamDto
@@ -69,4 +70,12 @@ interface XtreamApiService {
         @Query("action") action: String = "get_vod_info",
         @Query("vod_id") vodId: String
     ): VodInfoDto
+
+    @GET("player_api.php")
+    suspend fun getSeriesInfo(
+        @Query("username") username: String,
+        @Query("password") password: String,
+        @Query("action") action: String = "get_series_info",
+        @Query("series_id") seriesId: Int
+    ): SeriesInfoResponse
 }

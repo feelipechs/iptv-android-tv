@@ -1,5 +1,6 @@
 package com.iptv.tv.data.local
 
+import android.util.Log
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
@@ -53,6 +54,20 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
     }
 }
 
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE watch_history ADD COLUMN lastEpisodeNum INTEGER")
+        db.execSQL("ALTER TABLE watch_history ADD COLUMN lastEpisodeTitle TEXT")
+        db.execSQL("ALTER TABLE watch_history ADD COLUMN lastSeason TEXT")
+    }
+}
+
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE watch_history ADD COLUMN lastEpisodeUrl TEXT")
+    }
+}
+
 @Database(
     entities = [
         CategoryEntity::class,
@@ -60,7 +75,7 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         FavoriteEntity::class,
         WatchHistoryEntity::class
     ],
-    version = 2,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(ContentTypeConverters::class)
@@ -69,4 +84,18 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun streamDao(): StreamDao
     abstract fun favoriteDao(): FavoriteDao
     abstract fun watchHistoryDao(): WatchHistoryDao
+
+    suspend fun logWatchHistorySchema() {
+        val db = openHelper.readableDatabase
+        Log.d("DBDebug", "Database version: ${db.version}")
+        val cursor = db.query("PRAGMA table_info(watch_history)")
+        val columns = mutableListOf<String>()
+        cursor.use {
+            while (it.moveToNext()) {
+                val nameIndex = it.getColumnIndex("name")
+                if (nameIndex >= 0) columns.add(it.getString(nameIndex))
+            }
+        }
+        Log.d("DBDebug", "Colunas reais: $columns")
+    }
 }

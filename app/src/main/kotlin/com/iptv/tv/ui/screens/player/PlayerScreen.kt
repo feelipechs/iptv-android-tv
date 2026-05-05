@@ -2,6 +2,7 @@ package com.iptv.tv.ui.screens.player
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,6 +17,7 @@ import androidx.tv.material3.*
 @Composable
 fun PlayerScreen(
     streamUrl: String,
+    streamName: String = "",
     onBack: () -> Unit,
     viewModel: PlayerViewModel = hiltViewModel()
 ) {
@@ -30,7 +32,6 @@ fun PlayerScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // ExoPlayer via AndroidView
         AndroidView(
             factory = { context ->
                 PlayerView(context).apply {
@@ -42,7 +43,22 @@ fun PlayerScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Overlay de erro
+        if (streamName.isNotBlank()) {
+            Text(
+                text = streamName,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+                    .background(
+                        color = Color.Black.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                color = Color.White,
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+
         if (state.error != null) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -66,7 +82,6 @@ fun PlayerScreen(
             }
         }
 
-        // Buffering indicator
         if (state.isBuffering && state.error == null) {
             Box(
                 modifier = Modifier.fillMaxSize(),

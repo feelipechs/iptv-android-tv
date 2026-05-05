@@ -24,7 +24,11 @@ data class Stream(
     val epgChannelId: String? = null,
     val containerExtension: String = "m3u8",
     val isFavorite: Boolean = false,
-    val progress: Float = 0f
+    val progress: Float = 0f,
+    val lastEpisodeNum: Int? = null,
+    val lastEpisodeTitle: String? = null,
+    val lastSeason: String? = null,
+    val lastEpisodeUrl: String? = null
 )
 
 data class WatchHistoryEntry(
@@ -35,7 +39,11 @@ data class WatchHistoryEntry(
     val posterUrl: String?,
     val streamUrl: String,
     val lastWatchedAt: Long,
-    val progress: Float = 0f
+    val progress: Float = 0f,
+    val lastEpisodeNum: Int? = null,
+    val lastEpisodeTitle: String? = null,
+    val lastSeason: String? = null,
+    val lastEpisodeUrl: String? = null
 )
 
 data class FavoriteEntry(

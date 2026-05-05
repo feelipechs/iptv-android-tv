@@ -51,6 +51,7 @@ private val CATEGORIES_PANEL_WIDTH = 260.dp
 @Composable
 fun HomeScreen(
     onStreamSelected: (Stream) -> Unit,
+    onPlayEpisode: ((String, String) -> Unit)? = null,
     onNavigateToFavorites: () -> Unit,
     onNavigateToSettings: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
@@ -347,14 +348,17 @@ fun HomeScreen(
                             )
                         }
                         if (state.selectedContentType == ContentType.LIVE || state.selectedCategoryId == "favorites_special" || state.selectedCategoryId == "recents_special") {
-                            LiveStreamGrid(
-streams = state.streams.filter { it.name.contains(state.streamSearch, ignoreCase = true) },
+LiveStreamGrid(
+                                streams = state.streams.filter { it.name.contains(state.streamSearch, ignoreCase = true) },
                                 onStreamSelected = {
                                     viewModel.recordToHistory(it)
                                     onStreamSelected(it)
                                 },
                                 onToggleFavorite = { viewModel.toggleFavorite(it) },
-                                isFavorite = { viewModel.isFavorite(it) }
+                                isFavorite = { viewModel.isFavorite(it) },
+        onPlayEpisodeUrl = { url, name ->
+            onPlayEpisode?.invoke(url, name)
+            }
                             )
                         } else {
                             VodStreamGrid(streams = state.streams.filter { it.name.contains(state.streamSearch, ignoreCase = true) }, onStreamSelected = {
@@ -416,7 +420,8 @@ private fun LiveStreamGrid(
     streams: List<Stream>,
     onStreamSelected: (Stream) -> Unit,
     onToggleFavorite: (Stream) -> Unit,
-    isFavorite: (String) -> Flow<Boolean>
+    isFavorite: (String) -> Flow<Boolean>,
+    onPlayEpisodeUrl: ((String, String) -> Unit)? = null
 ) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         itemsIndexed(streams) { _, stream ->
@@ -435,15 +440,58 @@ private fun LiveStreamGrid(
                     ),
                     shape = ClickableSurfaceDefaults.shape(MaterialTheme.shapes.small)
                 ) {
-                    Text(
-                        text = stream.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = stream.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (stream.type == ContentType.SERIES && stream.lastSeason != null && stream.lastEpisodeNum != null) {
+                            Text(
+                                text = buildString {
+                                    append("T")
+                                    append(stream.lastSeason.substringAfter(" "))
+                                    append(" E")
+                                    append(stream.lastEpisodeNum)
+                                    stream.lastEpisodeTitle?.let { append(" · $it") }
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
                 }
                 Spacer(Modifier.width(4.dp))
+                if (stream.type == ContentType.SERIES && stream.lastEpisodeUrl != null && onPlayEpisodeUrl != null) {
+                    Surface(
+                        onClick = { onPlayEpisodeUrl(stream.lastEpisodeUrl, stream.lastEpisodeTitle ?: stream.name) },
+                        modifier = Modifier
+                            .width(44.dp)
+                            .fillMaxHeight(),
+                        colors = ClickableSurfaceDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            focusedContainerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Filled.PlayArrow,
+                                contentDescription = "Reproduzir",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.width(2.dp))
+                }
                 val isFav by isFavorite(stream.id).collectAsStateWithLifecycle(initialValue = false)
                 Surface(
                     onClick = { onToggleFavorite(stream) },

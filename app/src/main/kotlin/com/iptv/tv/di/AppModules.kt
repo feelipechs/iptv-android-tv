@@ -13,11 +13,14 @@ import com.iptv.tv.data.M3UParser
 import com.iptv.tv.data.WatchHistoryRepositoryImpl
 import com.iptv.tv.data.local.AppDatabase
 import com.iptv.tv.data.local.MIGRATION_1_2
+import com.iptv.tv.data.local.MIGRATION_2_3
+import com.iptv.tv.data.local.MIGRATION_3_4
 import com.iptv.tv.data.local.dao.CategoryDao
 import com.iptv.tv.data.local.dao.FavoriteDao
 import com.iptv.tv.data.local.dao.StreamDao
 import com.iptv.tv.data.local.dao.WatchHistoryDao
 import com.iptv.tv.data.remote.api.XtreamApiService
+import com.iptv.tv.data.remote.dto.SeriesInfoResponse
 import com.iptv.tv.domain.model.ProviderType
 import com.iptv.tv.domain.repository.ContentRepository
 import com.iptv.tv.domain.repository.CredentialsRepository
@@ -83,7 +86,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "iptv_cache.db")
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .build()
 
     @Provides fun provideCategoryDao(db: AppDatabase): CategoryDao = db.categoryDao()
@@ -164,6 +167,9 @@ class ContentRepositoryFactory(
             ProviderType.XTREAM -> xtreamRepo.validateCredentials(credentials)
         }
     }
+
+    override suspend fun getSeriesInfo(seriesId: Int): SeriesInfoResponse =
+        xtreamRepo.getSeriesInfo(seriesId)
 
     private fun getRepo(): ContentRepository {
         val credentials = runBlocking { credentialsRepository.getCredentials().first() }

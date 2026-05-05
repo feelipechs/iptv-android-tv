@@ -107,7 +107,11 @@ class HomeViewModel @Inject constructor(
                                 type = entry.type,
                                 streamUrl = entry.streamUrl,
                                 posterUrl = entry.posterUrl,
-                                progress = entry.progress
+                                progress = entry.progress,
+                                lastEpisodeNum = entry.lastEpisodeNum,
+                                lastEpisodeTitle = entry.lastEpisodeTitle,
+                                lastSeason = entry.lastSeason,
+                                lastEpisodeUrl = entry.lastEpisodeUrl
                             )
                         }
                     }

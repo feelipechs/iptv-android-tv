@@ -85,23 +85,31 @@ class WatchHistoryRepositoryImpl @Inject constructor(
 
     override fun getAllHistory(): Flow<List<WatchHistoryEntry>> =
         watchHistoryDao.getAllHistory().map { entities ->
-            entities.map { it.toDomain() }
+            entities.filter { it.name.isNotBlank() }.map { it.toDomain() }
         }
 
     override fun getHistoryByType(type: ContentType): Flow<List<WatchHistoryEntry>> =
         watchHistoryDao.getHistoryByType(type).map { entities ->
-            entities.map { it.toDomain() }
+            entities.filter { it.name.isNotBlank() }.map { it.toDomain() }
         }
 
     override fun getRecentHistory(limit: Int): Flow<List<WatchHistoryEntry>> =
         watchHistoryDao.getRecentHistory(limit).map { entities ->
-            entities.map { it.toDomain() }
+            entities.filter { it.name.isNotBlank() }.map { it.toDomain() }
         }
 
     override fun getHistoryCount(): Flow<Int> =
         watchHistoryDao.getHistoryCount()
 
-    override suspend fun addToHistory(stream: Stream, progress: Float) {
+    override suspend fun addToHistory(
+        stream: Stream,
+        progress: Float,
+        episodeNum: Int?,
+        episodeTitle: String?,
+        season: String?,
+        episodeUrl: String?
+    ) {
+        if (stream.name.isBlank() || stream.id.isBlank()) return
         watchHistoryDao.addToHistory(
             streamId = stream.id,
             name = stream.name,
@@ -109,7 +117,11 @@ class WatchHistoryRepositoryImpl @Inject constructor(
             type = stream.type,
             posterUrl = stream.posterUrl,
             streamUrl = stream.streamUrl,
-            progress = progress
+            progress = progress,
+            lastEpisodeNum = episodeNum,
+            lastEpisodeTitle = episodeTitle,
+            lastSeason = season,
+            lastEpisodeUrl = episodeUrl
         )
     }
 
@@ -133,6 +145,10 @@ class WatchHistoryRepositoryImpl @Inject constructor(
         posterUrl = posterUrl,
         streamUrl = streamUrl,
         lastWatchedAt = lastWatchedAt,
-        progress = progress
+        progress = progress,
+        lastEpisodeNum = lastEpisodeNum,
+        lastEpisodeTitle = lastEpisodeTitle,
+        lastSeason = lastSeason,
+        lastEpisodeUrl = lastEpisodeUrl
     )
 }
