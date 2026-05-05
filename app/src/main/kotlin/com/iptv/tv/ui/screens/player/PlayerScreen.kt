@@ -16,15 +16,17 @@ import androidx.tv.material3.*
 
 @Composable
 fun PlayerScreen(
+    streamId: String,
     streamUrl: String,
     streamName: String = "",
+    startPosition: Long = 0L,
     onBack: () -> Unit,
     viewModel: PlayerViewModel = hiltViewModel()
 ) {
     val state by viewModel.playerState.collectAsStateWithLifecycle()
 
     LaunchedEffect(streamUrl) {
-        viewModel.play(streamUrl)
+        viewModel.play(streamUrl, startPosition)
     }
 
     Box(

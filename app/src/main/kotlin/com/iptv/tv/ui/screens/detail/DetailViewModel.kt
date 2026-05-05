@@ -1,5 +1,6 @@
 package com.iptv.tv.ui.screens.detail
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iptv.tv.data.remote.api.XtreamApiService
@@ -7,6 +8,7 @@ import com.iptv.tv.data.remote.dto.VodInfoDto
 import com.iptv.tv.domain.model.Stream
 import com.iptv.tv.domain.repository.CredentialsRepository
 import com.iptv.tv.domain.repository.FavoritesRepository
+import com.iptv.tv.domain.repository.WatchHistoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +22,7 @@ import javax.inject.Inject
 class DetailViewModel @Inject constructor(
     private val credentialsRepository: CredentialsRepository,
     private val favoritesRepository: FavoritesRepository,
+    private val watchHistoryRepository: WatchHistoryRepository,
     private val api: XtreamApiService
 ) : ViewModel() {
 
@@ -29,6 +32,9 @@ class DetailViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _savedProgress = MutableStateFlow<Float?>(null)
+    val savedProgress: StateFlow<Float?> = _savedProgress.asStateFlow()
+
     fun loadVodInfo(streamId: String) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -36,9 +42,18 @@ class DetailViewModel @Inject constructor(
                 val creds = credentialsRepository.getCredentials().first() ?: return@launch
                 _vodInfo.value = api.getVodInfo(creds.username, creds.password, vodId = streamId)
             }.onFailure {
-                // ignora erro, mostra só o que tiver
             }
             _isLoading.value = false
+        }
+        loadProgress(streamId)
+    }
+
+    private fun loadProgress(streamId: String) {
+        viewModelScope.launch {
+            val entry = watchHistoryRepository.getHistoryEntry(streamId)
+            Log.d("VodDebug", "loadProgress streamId='$streamId' entry=$entry")
+            _savedProgress.value = if (entry != null && entry.progress > 0f) entry.progress else null
+            Log.d("VodDebug", "savedProgress definido como: ${_savedProgress.value}")
         }
     }
 

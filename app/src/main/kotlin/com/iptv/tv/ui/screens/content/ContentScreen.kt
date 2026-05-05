@@ -6,6 +6,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -21,6 +23,7 @@ import androidx.tv.material3.*
 import coil.compose.AsyncImage
 import com.iptv.tv.domain.model.ContentType
 import com.iptv.tv.domain.model.Stream
+import androidx.compose.foundation.background
 
 @Composable
 fun ContentScreen(
@@ -34,22 +37,22 @@ fun ContentScreen(
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 48.dp, vertical = 24.dp)) {
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Surface(
-                onClick = onBack,
-                colors = ClickableSurfaceDefaults.colors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
-                shape = ClickableSurfaceDefaults.shape(shape = MaterialTheme.shapes.small),
-                modifier = Modifier.padding(end = 16.dp)
-            ) {
-                Text("← Voltar", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-            }
-            Text(
-                text = if (contentType == ContentType.LIVE) "Canais" else "Conteúdo",
-                style = MaterialTheme.typography.headlineMedium
-            )
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Surface(
+            onClick = onBack,
+            colors = ClickableSurfaceDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            ),
+            shape = ClickableSurfaceDefaults.shape(shape = MaterialTheme.shapes.small),
+            modifier = Modifier.padding(end = 16.dp)
+        ) {
+            Text("← Voltar", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
         }
+        Text(
+            text = if (contentType == ContentType.LIVE) "Canais" else "Conteúdo",
+            style = MaterialTheme.typography.headlineMedium
+        )
+    }
 
         Spacer(Modifier.height(20.dp))
 
@@ -102,7 +105,7 @@ private fun LiveStreamList(
         items(streams.size) { idx ->
             val stream = streams[idx]
             val isFavorite = favoriteStreamIds.contains(stream.id)
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 horizontalArrangement = Arrangement.spacedBy(0.dp)
@@ -130,9 +133,9 @@ private fun LiveStreamList(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.width(4.dp))
-                
+
                 Surface(
                     onClick = { onToggleFavorite(stream) },
                     modifier = Modifier.size(56.dp).fillMaxHeight(),
@@ -175,7 +178,7 @@ private fun VodGrid(
     ) {
         items(streams) { stream ->
             val isFavorite = favoriteStreamIds.contains(stream.id)
-            
+
             Surface(
                 onClick = { onStreamSelected(stream) },
                 colors = ClickableSurfaceDefaults.colors(
@@ -195,7 +198,7 @@ private fun VodGrid(
                                     .fillMaxWidth()
                                     .height(120.dp)
                             )
-                            
+
                             Surface(
                                 onClick = { onToggleFavorite(stream) },
                                 modifier = Modifier
@@ -222,16 +225,33 @@ private fun VodGrid(
                                     )
                                 }
                             }
-                        }
-                        Text(
-                            text = stream.name,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 2,
-                            modifier = Modifier.padding(8.dp)
-                        )
                     }
+                    if (stream.progress > 0f) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(3.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(stream.progress)
+                                    .fillMaxHeight()
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
+                        }
+                    }
+                    Text(
+                        text = stream.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 2,
+                        modifier = Modifier.padding(8.dp)
+                    )
                 }
             }
         }
     }
+}
 }

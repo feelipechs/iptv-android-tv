@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
@@ -426,45 +427,75 @@ private fun LiveStreamGrid(
     LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         itemsIndexed(streams) { _, stream ->
             Row(modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                Surface(
-                    onClick = { onStreamSelected(stream) },
+                Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small),
-                    colors = ClickableSurfaceDefaults.colors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        focusedContainerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                        focusedContentColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    shape = ClickableSurfaceDefaults.shape(MaterialTheme.shapes.small)
                 ) {
-                    Column(
+                    Surface(
+                        onClick = { onStreamSelected(stream) },
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.Center
+                            .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small),
+                        colors = ClickableSurfaceDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            focusedContainerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            focusedContentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        shape = ClickableSurfaceDefaults.shape(MaterialTheme.shapes.small)
                     ) {
-                        Text(
-                            text = stream.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (stream.type == ContentType.SERIES && stream.lastSeason != null && stream.lastEpisodeNum != null) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.Center
+                        ) {
                             Text(
-                                text = buildString {
-                                    append("T")
-                                    append(stream.lastSeason.substringAfter(" "))
-                                    append(" E")
-                                    append(stream.lastEpisodeNum)
-                                    stream.lastEpisodeTitle?.let { append(" · $it") }
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                text = stream.name,
+                                style = MaterialTheme.typography.titleMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
+                            )
+                            if (stream.type == ContentType.SERIES && stream.lastSeason != null && stream.lastEpisodeNum != null) {
+                                Text(
+                                    text = buildString {
+                                        append("T")
+                                        append(stream.lastSeason.substringAfter(" "))
+                                        append(" E")
+                                        append(stream.lastEpisodeNum)
+                                        stream.lastEpisodeTitle?.let { append(" · $it") }
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            if (stream.type == ContentType.VOD && stream.progress > 0f) {
+                                val percent = (stream.progress * 100).toInt()
+                                Text(
+                                    text = "$percent% assistido",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+                    if (stream.type == ContentType.VOD && stream.progress > 0f) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(2.dp)
+                                .align(Alignment.BottomStart)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(stream.progress)
+                                    .fillMaxHeight()
+                                    .background(MaterialTheme.colorScheme.primary)
                             )
                         }
                     }
@@ -485,6 +516,28 @@ private fun LiveStreamGrid(
                             Icon(
                                 imageVector = Icons.Filled.PlayArrow,
                                 contentDescription = "Reproduzir",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.width(2.dp))
+                }
+                if (stream.type == ContentType.VOD && stream.progress > 0f) {
+                    Surface(
+                        onClick = { onStreamSelected(stream) },
+                        modifier = Modifier
+                            .width(44.dp)
+                            .fillMaxHeight(),
+                        colors = ClickableSurfaceDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            focusedContainerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Filled.PlayArrow,
+                                contentDescription = "Continuar",
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(24.dp)
                             )
@@ -539,17 +592,58 @@ private fun VodStreamGrid(
                 ),
                 shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
             ) {
-                Column {
-                    stream.posterUrl?.let { url ->
+            Column {
+                stream.posterUrl?.let { url ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    ) {
                         AsyncImage(
                             model = url,
                             contentDescription = stream.name,
-                            modifier = Modifier.fillMaxWidth().weight(1f)
+                            modifier = Modifier
+                                .fillMaxSize()
                                 .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
                             contentScale = ContentScale.Crop
                         )
+                        if (stream.progress > 0f) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(24.dp))
+                                    .background(Color.Black.copy(alpha = 0.6f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.PlayArrow,
+                                    contentDescription = "Continuar",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        }
                     }
-                    Text(
+                }
+                if (stream.progress > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(stream.progress)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                    }
+                }
+                Text(
                         text = stream.name,
                         style = MaterialTheme.typography.labelMedium,
                         maxLines = 2,

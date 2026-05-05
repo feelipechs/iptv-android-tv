@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,7 +49,7 @@ import com.iptv.tv.domain.model.Stream
 @Composable
 fun DetailScreen(
     stream: Stream,
-    onPlay: (Stream) -> Unit,
+    onPlay: (Stream, Long) -> Unit,
     onBack: () -> Unit,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
@@ -60,6 +61,8 @@ fun DetailScreen(
     }
 
     val isFavorite by viewModel.isFavorite(stream.id).collectAsStateWithLifecycle(initialValue = false)
+
+    val savedProgress by viewModel.savedProgress.collectAsStateWithLifecycle()
 
     val playButtonFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { playButtonFocusRequester.requestFocus() }
@@ -162,37 +165,99 @@ fun DetailScreen(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+            val progress = savedProgress
+                val showContinue = progress != null && progress > 0.05f
+
+                if (showContinue) {
+                    Surface(
+                        onClick = { onPlay(stream, -1L) },
+                            modifier = Modifier.focusRequester(playButtonFocusRequester),
+                            colors = ClickableSurfaceDefaults.colors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                focusedContainerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                focusedContentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
                         ) {
-                            Surface(
-                                onClick = { onPlay(stream) },
-                                modifier = Modifier.focusRequester(playButtonFocusRequester),
-                                colors = ClickableSurfaceDefaults.colors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    focusedContainerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                                    focusedContentColor = MaterialTheme.colorScheme.onPrimary
-                                ),
-                                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+                            Row(
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.PlayArrow,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Assistir",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                }
+                                Icon(
+                                    imageVector = Icons.Filled.PlayArrow,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Continuar",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
                             }
+                        }
+
+                        Surface(
+                        onClick = { onPlay(stream, 0L) },
+                        colors = ClickableSurfaceDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                focusedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            ),
+                            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Replay,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Do início",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    } else {
+                    Surface(
+                        onClick = { onPlay(stream, 0L) },
+                        modifier = Modifier.focusRequester(playButtonFocusRequester),
+                            colors = ClickableSurfaceDefaults.colors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                focusedContainerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                focusedContentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.PlayArrow,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Assistir",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                        }
+                    }
 
                             Surface(
                                 onClick = { viewModel.toggleFavorite(stream) },

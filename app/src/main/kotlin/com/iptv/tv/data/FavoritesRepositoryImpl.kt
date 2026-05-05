@@ -101,6 +101,9 @@ class WatchHistoryRepositoryImpl @Inject constructor(
     override fun getHistoryCount(): Flow<Int> =
         watchHistoryDao.getHistoryCount()
 
+    override suspend fun getHistoryEntry(streamId: String): WatchHistoryEntry? =
+        watchHistoryDao.getById(streamId)?.toDomain()
+
     override suspend fun addToHistory(
         stream: Stream,
         progress: Float,

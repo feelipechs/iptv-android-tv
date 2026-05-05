@@ -97,8 +97,8 @@ class HomeViewModel @Inject constructor(
                         }
                     }
                 }
-                RECENTS_CATEGORY_ID -> {
-                    watchHistoryRepository.getRecentHistory(20).map { history ->
+RECENTS_CATEGORY_ID -> {
+                watchHistoryRepository.getHistoryByType(contentType).map { history ->
                         history.map { entry ->
                             Stream(
                                 id = entry.streamId,
@@ -307,7 +307,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun recordToHistory(stream: Stream) {
-        if (stream.type == ContentType.SERIES) return
+        if (stream.type != ContentType.LIVE) return
         viewModelScope.launch {
             watchHistoryRepository.addToHistory(stream, 0f)
         }
