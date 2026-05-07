@@ -15,7 +15,7 @@ import com.iptv.tv.domain.model.Credentials
 import com.iptv.tv.domain.model.Stream
 import com.iptv.tv.domain.repository.ContentRepository
 import com.iptv.tv.domain.repository.CredentialsRepository
-import com.iptv.tv.domain.usecase.CategoryNormalizer
+
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -53,19 +53,10 @@ class ContentRepositoryImpl @Inject constructor(
             ContentType.SERIES -> api.getSeriesCategories(creds.username, creds.password)
         }
 
-        val entities = dtos.map { dto ->
-            val entity = dto.toEntity(type)
-            entity.copy(name = CategoryNormalizer.normalize(entity.name))
-        }
+    val entities = dtos.map { it.toEntity(type) }
 
-        val seen = mutableSetOf<String>()
-        val deduped = entities.filter { entity ->
-            val key = "${entity.name.lowercase()}_${entity.type}"
-            if (seen.contains(key)) false else { seen.add(key); true }
-        }
-
-        Log.d("ContentRepo", "refreshCategories: ${dtos.size} DTOs -> ${deduped.size} entities")
-        categoryDao.replaceAll(type, deduped)
+      Log.d("ContentRepo", "refreshCategories: ${entities.size} entities")
+      categoryDao.replaceAll(type, entities)
     }
 
     override suspend fun refreshStreams(categoryId: String, type: ContentType) {
@@ -120,12 +111,12 @@ class ContentRepositoryImpl @Inject constructor(
 
     // --- Mapeamentos ---
 
-    private fun com.iptv.tv.data.remote.dto.CategoryDto.toEntity(type: ContentType) = CategoryEntity(
-        id = categoryId,
-        name = CategoryNormalizer.normalize(categoryName),
-        type = type,
-        streamCount = streamCount ?: 0
-    )
+  private fun com.iptv.tv.data.remote.dto.CategoryDto.toEntity(type: ContentType) = CategoryEntity(
+    id = categoryId,
+    name = categoryName.trim(),
+    type = type,
+    streamCount = streamCount ?: 0
+  )
 
     private fun CategoryEntity.toDomain() = com.iptv.tv.domain.model.Category(
         id = id,

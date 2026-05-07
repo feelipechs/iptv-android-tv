@@ -13,7 +13,7 @@ import com.iptv.tv.domain.model.ProviderType
 import com.iptv.tv.domain.model.Stream
 import com.iptv.tv.domain.repository.ContentRepository
 import com.iptv.tv.domain.repository.CredentialsRepository
-import com.iptv.tv.domain.usecase.CategoryNormalizer
+
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -93,7 +93,7 @@ class M3uContentRepository @Inject constructor(
         val categoryEntities = parseResult.categories.map { cat ->
             CategoryEntity(
                 id = cat.id,
-                name = CategoryNormalizer.normalize(cat.name),
+                name = cat.name.trim(),
                 type = ContentType.LIVE,
                 streamCount = cat.streamCount
             )

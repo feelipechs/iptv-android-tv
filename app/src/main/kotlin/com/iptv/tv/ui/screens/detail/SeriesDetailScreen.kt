@@ -67,8 +67,11 @@ fun SeriesDetailScreen(
         viewModel.setStream(stream)
     }
 
-    val playButtonFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { playButtonFocusRequester.requestFocus() }
+  val playButtonFocusRequester = remember { FocusRequester() }
+  LaunchedEffect(Unit) {
+    kotlinx.coroutines.delay(100)
+    playButtonFocusRequester.requestFocus()
+  }
 
     val resumeUrl = viewModel.getResumeUrl()
     val isResume = uiState.lastEpisodeUrl != null
@@ -110,11 +113,11 @@ fun SeriesDetailScreen(
             ),
           colors = ClickableSurfaceDefaults.colors(
             containerColor = MaterialTheme.colorScheme.surface,
-            focusedContainerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
             focusedContentColor = MaterialTheme.colorScheme.onSurface,
-            pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-            pressedContentColor = MaterialTheme.colorScheme.onPrimary
+            pressedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            pressedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
           ),
           shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
         ) {

@@ -171,210 +171,222 @@ fun FavoritesScreen(
 
 @Composable
 private fun FavoriteItem(
-    favorite: FavoriteEntry,
-    onRemove: () -> Unit,
-    onClick: () -> Unit
+  favorite: FavoriteEntry,
+  onRemove: () -> Unit,
+  onClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().height(80.dp),
-        horizontalArrangement = Arrangement.spacedBy(0.dp)
+  Row(
+    modifier = Modifier.fillMaxWidth().height(80.dp),
+    horizontalArrangement = Arrangement.spacedBy(0.dp)
+  ) {
+    Column(
+      modifier = Modifier
+        .weight(1f)
+        .fillMaxHeight()
     ) {
-        val interactionSource = remember { MutableInteractionSource() }
-        val isFocused by interactionSource.collectIsFocusedAsState()
-        Surface(
-            onClick = onClick,
-            interactionSource = interactionSource,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(8.dp))
-                .border(
-                    width = if (isFocused) 2.dp else 0.dp,
-                    color = if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent,
-                    shape = RoundedCornerShape(8.dp)
-                ),
+      val interactionSource = remember { MutableInteractionSource() }
+      val isFocused by interactionSource.collectIsFocusedAsState()
+      Surface(
+        onClick = onClick,
+        interactionSource = interactionSource,
+        modifier = Modifier
+          .fillMaxSize()
+          .clip(RoundedCornerShape(8.dp))
+          .border(
+            width = if (isFocused) 2.dp else 0.dp,
+            color = if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent,
+            shape = RoundedCornerShape(8.dp)
+          ),
+        colors = ClickableSurfaceDefaults.colors(
+          containerColor = MaterialTheme.colorScheme.surface,
+          focusedContainerColor = MaterialTheme.colorScheme.surface,
+          contentColor = MaterialTheme.colorScheme.onSurface,
+          focusedContentColor = MaterialTheme.colorScheme.onSurface,
+          pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+          pressedContentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+      ) {
+        Row(
+          modifier = Modifier.fillMaxSize().padding(12.dp),
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          if (favorite.posterUrl != null) {
+            AsyncImage(
+              model = favorite.posterUrl,
+              contentDescription = null,
+              contentScale = ContentScale.Crop,
+              modifier = Modifier
+                .width(56.dp)
+                .height(56.dp)
+                .clip(RoundedCornerShape(4.dp))
+            )
+            Spacer(Modifier.width(12.dp))
+          }
+          Column(modifier = Modifier.weight(1f)) {
+            Text(
+              text = favorite.name,
+              style = MaterialTheme.typography.titleMedium,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
+            Text(
+              text = favorite.type.name,
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+          }
+        }
+      }
+    }
+
+    Spacer(modifier = Modifier.width(4.dp))
+
+    Surface(
+      onClick = onRemove,
+      modifier = Modifier.size(56.dp).fillMaxHeight().clip(RoundedCornerShape(8.dp)),
       colors = ClickableSurfaceDefaults.colors(
-        containerColor = MaterialTheme.colorScheme.surface,
-        focusedContainerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        focusedContentColor = MaterialTheme.colorScheme.onSurface,
-        pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-        pressedContentColor = MaterialTheme.colorScheme.onPrimary
+        containerColor = MaterialTheme.colorScheme.errorContainer,
+        focusedContainerColor = MaterialTheme.colorScheme.error,
+        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        focusedContentColor = MaterialTheme.colorScheme.onError,
+        pressedContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+        pressedContentColor = MaterialTheme.colorScheme.onError
       ),
       shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
     ) {
-      Row(
-        modifier = Modifier.fillMaxSize().padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+      Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
       ) {
-        if (favorite.posterUrl != null) {
-                    AsyncImage(
-                        model = favorite.posterUrl,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .width(56.dp)
-                            .height(56.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                    )
-                    Spacer(Modifier.width(12.dp))
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = favorite.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = favorite.type.name,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.width(4.dp))
-        
-        Surface(
-            onClick = onRemove,
-            modifier = Modifier.size(56.dp).fillMaxHeight().clip(RoundedCornerShape(8.dp)),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                focusedContainerColor = MaterialTheme.colorScheme.error,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                focusedContentColor = MaterialTheme.colorScheme.onError,
-                pressedContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
-                pressedContentColor = MaterialTheme.colorScheme.onError
-            ),
-            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Favorite,
-                    contentDescription = "Remover favorito",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
+        Icon(
+          imageVector = Icons.Filled.Favorite,
+          contentDescription = "Remover favorito",
+          modifier = Modifier.size(24.dp)
+        )
+      }
     }
+  }
 }
 
 @Composable
 private fun HistoryItem(
-    entry: WatchHistoryEntry,
-    onDelete: () -> Unit,
-    onClick: () -> Unit
+  entry: WatchHistoryEntry,
+  onDelete: () -> Unit,
+  onClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().height(80.dp),
-        horizontalArrangement = Arrangement.spacedBy(0.dp)
+  Row(
+    modifier = Modifier.fillMaxWidth().height(80.dp),
+    horizontalArrangement = Arrangement.spacedBy(0.dp)
+  ) {
+    Column(
+      modifier = Modifier
+        .weight(1f)
+        .fillMaxHeight()
     ) {
-        val interactionSource = remember { MutableInteractionSource() }
-        val isFocused by interactionSource.collectIsFocusedAsState()
-        Surface(
-            onClick = onClick,
-            interactionSource = interactionSource,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(8.dp))
-                .border(
-                    width = if (isFocused) 2.dp else 0.dp,
-                    color = if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent,
-                    shape = RoundedCornerShape(8.dp)
-                ),
+      val interactionSource = remember { MutableInteractionSource() }
+      val isFocused by interactionSource.collectIsFocusedAsState()
+      Surface(
+        onClick = onClick,
+        interactionSource = interactionSource,
+        modifier = Modifier
+          .fillMaxSize()
+          .clip(RoundedCornerShape(8.dp))
+          .border(
+            width = if (isFocused) 2.dp else 0.dp,
+            color = if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent,
+            shape = RoundedCornerShape(8.dp)
+          ),
+        colors = ClickableSurfaceDefaults.colors(
+          containerColor = MaterialTheme.colorScheme.surface,
+          focusedContainerColor = MaterialTheme.colorScheme.surface,
+          contentColor = MaterialTheme.colorScheme.onSurface,
+          focusedContentColor = MaterialTheme.colorScheme.onSurface,
+          pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+          pressedContentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+      ) {
+        Row(
+          modifier = Modifier.fillMaxSize().padding(12.dp),
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          if (entry.posterUrl != null) {
+            AsyncImage(
+              model = entry.posterUrl,
+              contentDescription = null,
+              contentScale = ContentScale.Crop,
+              modifier = Modifier
+                .width(56.dp)
+                .height(56.dp)
+                .clip(RoundedCornerShape(4.dp))
+            )
+            Spacer(Modifier.width(12.dp))
+          }
+          Column(modifier = Modifier.weight(1f)) {
+            Text(
+              text = entry.name,
+              style = MaterialTheme.typography.titleMedium,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
+            Text(
+              text = "${entry.type.name} • ${formatRelativeTime(entry.lastWatchedAt)}",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
+            if (entry.progress > 0f) {
+              Spacer(Modifier.height(4.dp))
+              Box(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .height(3.dp)
+                  .clip(RoundedCornerShape(2.dp))
+                  .background(MaterialTheme.colorScheme.surfaceVariant)
+              ) {
+                Box(
+                  modifier = Modifier
+                    .fillMaxWidth(entry.progress)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(MaterialTheme.colorScheme.primary)
+                )
+              }
+            }
+          }
+        }
+      }
+    }
+
+    Spacer(modifier = Modifier.width(4.dp))
+
+    Surface(
+      onClick = onDelete,
+      modifier = Modifier.size(56.dp).fillMaxHeight().clip(RoundedCornerShape(8.dp)),
       colors = ClickableSurfaceDefaults.colors(
-        containerColor = MaterialTheme.colorScheme.surface,
-        focusedContainerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        focusedContentColor = MaterialTheme.colorScheme.onSurface,
-        pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-        pressedContentColor = MaterialTheme.colorScheme.onPrimary
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        focusedContainerColor = MaterialTheme.colorScheme.error,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        focusedContentColor = MaterialTheme.colorScheme.onError,
+        pressedContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+        pressedContentColor = MaterialTheme.colorScheme.onError
       ),
       shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
     ) {
-      Row(
-        modifier = Modifier.fillMaxSize().padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+      Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
       ) {
-        if (entry.posterUrl != null) {
-                    AsyncImage(
-                        model = entry.posterUrl,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .width(56.dp)
-                            .height(56.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                    )
-                    Spacer(Modifier.width(12.dp))
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = entry.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "${entry.type.name} • ${formatRelativeTime(entry.lastWatchedAt)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (entry.progress > 0f) {
-                        Spacer(Modifier.height(4.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(3.dp)
-                                .clip(RoundedCornerShape(2.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(entry.progress)
-                                    .fillMaxHeight()
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(MaterialTheme.colorScheme.primary)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.width(4.dp))
-        
-        Surface(
-            onClick = onDelete,
-            modifier = Modifier.size(56.dp).fillMaxHeight().clip(RoundedCornerShape(8.dp)),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                focusedContainerColor = MaterialTheme.colorScheme.error,
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                focusedContentColor = MaterialTheme.colorScheme.onError,
-                pressedContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
-                pressedContentColor = MaterialTheme.colorScheme.onError
-            ),
-            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Delete,
-                    contentDescription = "Remover do histórico",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
+        Icon(
+          imageVector = Icons.Filled.Delete,
+          contentDescription = "Remover do histórico",
+          modifier = Modifier.size(24.dp)
+        )
+      }
     }
+  }
 }
 
 private fun formatRelativeTime(timestamp: Long): String {

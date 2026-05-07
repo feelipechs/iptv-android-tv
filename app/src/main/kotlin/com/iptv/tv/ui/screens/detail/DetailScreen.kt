@@ -101,14 +101,14 @@ LaunchedEffect(Unit) {
               if (backFocused) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
               else Modifier
             ),
-          colors = ClickableSurfaceDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            focusedContainerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            focusedContentColor = MaterialTheme.colorScheme.onSurface,
-            pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-            pressedContentColor = MaterialTheme.colorScheme.onPrimary
-          ),
+        colors = ClickableSurfaceDefaults.colors(
+          containerColor = MaterialTheme.colorScheme.surface,
+          contentColor = MaterialTheme.colorScheme.onSurface,
+          focusedContainerColor = MaterialTheme.colorScheme.surface,
+          focusedContentColor = MaterialTheme.colorScheme.onSurface,
+          pressedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+          pressedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
           shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
         ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

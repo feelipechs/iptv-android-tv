@@ -1,8 +1,15 @@
 package com.iptv.tv.ui.screens.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,17 +18,21 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.PlayArrow
 
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
@@ -45,7 +56,6 @@ import com.iptv.tv.domain.model.ContentType
 import com.iptv.tv.domain.model.Stream
 import com.iptv.tv.ui.components.TvSearchField
 
-private val MAIN_PANEL_WIDTH = 72.dp
 private val CATEGORIES_PANEL_WIDTH = 260.dp
 
 @Composable
@@ -56,40 +66,66 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+  val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val firstCategoryFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { firstCategoryFocus.requestFocus() }
+  val menuFirstFocus = remember { FocusRequester() }
+  val categoryFirstFocus = remember { FocusRequester() }
+  val contentFirstFocus = remember { FocusRequester() }
+
+  LaunchedEffect(Unit) {
+    kotlinx.coroutines.delay(100)
+    categoryFirstFocus.requestFocus()
+  }
 
     Row(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
 
-        // PAINEL 1 — Menu principal (72dp, só ícones)
-        Column(
-            modifier = Modifier
-                .width(MAIN_PANEL_WIDTH)
-                .fillMaxHeight()
-                .focusGroup()
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(vertical = 8.dp, horizontal = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            MainMenuItem.entries.forEach { item ->
-                val isSelected = when (item) {
-                    MainMenuItem.LIVE -> state.selectedContentType == ContentType.LIVE
-                    MainMenuItem.VOD -> state.selectedContentType == ContentType.VOD
-                    MainMenuItem.SERIES -> state.selectedContentType == ContentType.SERIES
-                    MainMenuItem.REFRESH -> false
-                    MainMenuItem.SETTINGS -> false
-                }
-                Surface(
-                    onClick = {
-                        if (item == MainMenuItem.SETTINGS) {
-                            onNavigateToSettings()
-                        } else {
-                            viewModel.selectMainItem(item)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+    var isMenuExpanded by remember { mutableStateOf(true) }
+    val menuWidth by animateDpAsState(
+      targetValue = if (isMenuExpanded) 180.dp else 72.dp,
+      animationSpec = tween(durationMillis = 200)
+    )
+
+    // PAINEL 1 — Menu principal
+    Column(
+      modifier = Modifier
+        .width(menuWidth)
+        .fillMaxHeight()
+        .focusable()
+        .onFocusChanged { focusState -> isMenuExpanded = focusState.hasFocus }
+        .background(MaterialTheme.colorScheme.surface)
+        .padding(vertical = 8.dp, horizontal = 4.dp),
+      verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+      MainMenuItem.entries.forEachIndexed { index, item ->
+        val isSelected = when (item) {
+          MainMenuItem.LIVE -> state.selectedContentType == ContentType.LIVE
+          MainMenuItem.VOD -> state.selectedContentType == ContentType.VOD
+          MainMenuItem.SERIES -> state.selectedContentType == ContentType.SERIES
+          MainMenuItem.REFRESH -> false
+          MainMenuItem.SETTINGS -> false
+        }
+        val label = when (item) {
+          MainMenuItem.LIVE -> "Ao Vivo"
+          MainMenuItem.VOD -> "Filmes"
+          MainMenuItem.SERIES -> "Séries"
+          MainMenuItem.REFRESH -> "Atualizar"
+          MainMenuItem.SETTINGS -> "Config."
+        }
+        Surface(
+          onClick = {
+            if (item == MainMenuItem.SETTINGS) {
+              onNavigateToSettings()
+            } else {
+              viewModel.selectMainItem(item)
+            }
+          },
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .then(
+              if (index == 0) Modifier.focusRequester(menuFirstFocus).focusProperties { right = categoryFirstFocus }
+              else Modifier.focusProperties { right = categoryFirstFocus }
+            ),
         colors = ClickableSurfaceDefaults.colors(
           containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
           else MaterialTheme.colorScheme.surface,
@@ -101,34 +137,50 @@ fun HomeScreen(
         ),
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
       ) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = when (item) {
-                                MainMenuItem.LIVE -> Icons.Filled.PlayArrow
-                                MainMenuItem.VOD -> Icons.Filled.Home
-                                MainMenuItem.SERIES -> Icons.AutoMirrored.Filled.List
-                                MainMenuItem.REFRESH -> Icons.Filled.Refresh
-                                MainMenuItem.SETTINGS -> Icons.Filled.Settings
-                            },
-                            contentDescription = item.name,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                }
+          Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Icon(
+              imageVector = when (item) {
+                MainMenuItem.LIVE -> Icons.Filled.Tv
+                MainMenuItem.VOD -> Icons.Filled.Movie
+                MainMenuItem.SERIES -> Icons.Filled.VideoLibrary
+                MainMenuItem.REFRESH -> Icons.Filled.Refresh
+                MainMenuItem.SETTINGS -> Icons.Filled.Settings
+              },
+              contentDescription = label,
+              modifier = Modifier.size(28.dp)
+            )
+            AnimatedVisibility(
+              visible = isMenuExpanded,
+              enter = fadeIn() + expandHorizontally(),
+              exit = fadeOut() + shrinkHorizontally()
+            ) {
+              Text(
+                text = label,
+                modifier = Modifier.padding(start = 12.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.labelMedium
+              )
+            }
+          }
+        }
             }
         }
 
         // Divisor
         Box(Modifier.width(1.dp).fillMaxHeight().background(MaterialTheme.colorScheme.surfaceVariant))
 
-        // PAINEL 2 — Categorias (260dp)
-        Column(
-            modifier = Modifier
-                .width(CATEGORIES_PANEL_WIDTH)
-                .fillMaxHeight()
-                .focusGroup()
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 8.dp, vertical = 12.dp)
+    // PAINEL 2 — Categorias (260dp)
+    Column(
+      modifier = Modifier
+        .width(CATEGORIES_PANEL_WIDTH)
+        .fillMaxHeight()
+        .focusable()
+        .background(MaterialTheme.colorScheme.surface)
+        .padding(horizontal = 8.dp, vertical = 12.dp)
         ) {
             Text(
                 text = when {
@@ -141,9 +193,15 @@ fun HomeScreen(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
             )
 
-        Surface(
-            onClick = { viewModel.selectCategory("favorites_special") },
-            modifier = Modifier.fillMaxWidth().focusRequester(firstCategoryFocus),
+      Surface(
+        onClick = { viewModel.selectCategory("favorites_special") },
+        modifier = Modifier
+          .fillMaxWidth()
+          .focusRequester(categoryFirstFocus)
+          .focusProperties {
+            right = contentFirstFocus
+            left = menuFirstFocus
+          },
       colors = ClickableSurfaceDefaults.colors(
         containerColor = if (state.selectedCategoryId == "favorites_special") MaterialTheme.colorScheme.primaryContainer
         else MaterialTheme.colorScheme.surface,
@@ -176,9 +234,14 @@ fun HomeScreen(
                 }
             }
             Spacer(Modifier.height(2.dp))
-            Surface(
-                onClick = { viewModel.selectCategory("recents_special") },
-                modifier = Modifier.fillMaxWidth(),
+      Surface(
+        onClick = { viewModel.selectCategory("recents_special") },
+        modifier = Modifier
+          .fillMaxWidth()
+          .focusProperties {
+            right = contentFirstFocus
+            left = menuFirstFocus
+          },
     colors = ClickableSurfaceDefaults.colors(
       containerColor = if (state.selectedCategoryId == "recents_special") MaterialTheme.colorScheme.primaryContainer
       else MaterialTheme.colorScheme.surface,
@@ -215,9 +278,13 @@ fun HomeScreen(
             Spacer(Modifier.height(4.dp))
 
         TvSearchField(
-            value = state.categorySearch,
-            onValueChange = { viewModel.onCategorySearchChange(it) },
-            placeholder = "Buscar categoria..."
+          value = state.categorySearch,
+          onValueChange = { viewModel.onCategorySearchChange(it) },
+          placeholder = "Buscar categoria...",
+          modifier = Modifier.focusProperties {
+            right = contentFirstFocus
+            left = menuFirstFocus
+          }
         )
 
             if (state.isLoadingCategories && state.categories.isEmpty()) {
@@ -237,12 +304,14 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(2.dp),
             contentPadding = PaddingValues(vertical = 4.dp)
         ) {
-                    items(state.categories.filter { it.name.contains(state.categorySearch, ignoreCase = true) }) { category ->
-                        CategoryItem(
-                            category = category,
-                            isSelected = category.id == state.selectedCategoryId,
-                            onSelect = { viewModel.selectCategory(category.id) }
-                        )
+            items(state.categories.filter { it.name.contains(state.categorySearch, ignoreCase = true) }) { category ->
+              CategoryItem(
+                category = category,
+                isSelected = category.id == state.selectedCategoryId,
+                onSelect = { viewModel.selectCategory(category.id) },
+                leftFocus = menuFirstFocus,
+                rightFocus = contentFirstFocus
+              )
                     }
                 }
             }
@@ -251,14 +320,14 @@ fun HomeScreen(
         // Divisor
         Box(Modifier.width(1.dp).fillMaxHeight().background(MaterialTheme.colorScheme.surfaceVariant))
 
-        // PAINEL 3 — Streams
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .focusGroup()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+    // PAINEL 3 — Streams
+    Column(
+      modifier = Modifier
+        .weight(1f)
+        .fillMaxHeight()
+        .focusable()
+        .background(MaterialTheme.colorScheme.background)
+        .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             when {
                 state.selectedCategoryId == null -> {
@@ -280,32 +349,40 @@ fun HomeScreen(
                              color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-        else -> {
-            Column(Modifier.focusGroup()) {
-                TvSearchField(
-                    value = state.streamSearch,
-                    onValueChange = { viewModel.onStreamSearchChange(it) },
-                    placeholder = "Buscar stream...",
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+      else -> {
+        Column {
+          TvSearchField(
+            value = state.streamSearch,
+            onValueChange = { viewModel.onStreamSearchChange(it) },
+            placeholder = "Buscar stream...",
+            modifier = Modifier
+              .padding(bottom = 8.dp)
+              .focusRequester(contentFirstFocus)
+              .focusProperties { left = categoryFirstFocus }
+          )
                         if (state.selectedContentType == ContentType.LIVE || state.selectedCategoryId == "favorites_special" || state.selectedCategoryId == "recents_special") {
-LiveStreamGrid(
-                                streams = state.streams.filter { it.name.contains(state.streamSearch, ignoreCase = true) },
-                                onStreamSelected = {
-                                    viewModel.recordToHistory(it)
-                                    onStreamSelected(it)
-                                },
-                                onToggleFavorite = { viewModel.toggleFavorite(it) },
-                                isFavorite = { viewModel.isFavorite(it) },
-                    onPlayEpisodeUrl = { url, name, startPosition ->
-                        onPlayEpisode?.invoke(url, name, startPosition)
-                    }
-                            )
-                        } else {
-                            VodStreamGrid(streams = state.streams.filter { it.name.contains(state.streamSearch, ignoreCase = true) }, onStreamSelected = {
-                                viewModel.recordToHistory(it)
-                                onStreamSelected(it)
-                            })
+          LiveStreamGrid(
+            streams = state.streams.filter { it.name.contains(state.streamSearch, ignoreCase = true) },
+            onStreamSelected = {
+              viewModel.recordToHistory(it)
+              onStreamSelected(it)
+            },
+            onToggleFavorite = { viewModel.toggleFavorite(it) },
+            isFavorite = { viewModel.isFavorite(it) },
+            onPlayEpisodeUrl = { url, name, startPosition ->
+              onPlayEpisode?.invoke(url, name, startPosition)
+            },
+            leftFocus = categoryFirstFocus
+          )
+        } else {
+          VodStreamGrid(
+            streams = state.streams.filter { it.name.contains(state.streamSearch, ignoreCase = true) },
+            onStreamSelected = {
+              viewModel.recordToHistory(it)
+              onStreamSelected(it)
+            },
+            leftFocus = categoryFirstFocus
+          )
                         }
                     }
                 }
@@ -316,13 +393,20 @@ LiveStreamGrid(
 
 @Composable
 private fun CategoryItem(
-    category: Category,
-    isSelected: Boolean,
-    onSelect: () -> Unit
+  category: Category,
+  isSelected: Boolean,
+  onSelect: () -> Unit,
+  leftFocus: FocusRequester,
+  rightFocus: FocusRequester
 ) {
-    Surface(
-        onClick = onSelect,
-        modifier = Modifier.fillMaxWidth(),
+  Surface(
+    onClick = onSelect,
+    modifier = Modifier
+      .fillMaxWidth()
+      .focusProperties {
+        left = leftFocus
+        right = rightFocus
+      },
     colors = ClickableSurfaceDefaults.colors(
       containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
       else MaterialTheme.colorScheme.surface,
@@ -346,25 +430,26 @@ private fun CategoryItem(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
-            if (category.streamCount > 0) {
-                Text(
-                    text = "${category.streamCount}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-            }
+      if (category.streamCount > 0) {
+        Text(
+          text = "${category.streamCount}",
+          style = MaterialTheme.typography.labelSmall,
+          color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+          modifier = Modifier.padding(start = 8.dp)
+        )
+      }
         }
     }
 }
 
 @Composable
 private fun LiveStreamGrid(
-    streams: List<Stream>,
-    onStreamSelected: (Stream) -> Unit,
-    onToggleFavorite: (Stream) -> Unit,
-    isFavorite: (String) -> Flow<Boolean>,
-    onPlayEpisodeUrl: ((String, String, Long) -> Unit)? = null
+  streams: List<Stream>,
+  onStreamSelected: (Stream) -> Unit,
+  onToggleFavorite: (Stream) -> Unit,
+  isFavorite: (String) -> Flow<Boolean>,
+  onPlayEpisodeUrl: ((String, String, Long) -> Unit)? = null,
+  leftFocus: FocusRequester
 ) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         itemsIndexed(streams) { _, stream ->
@@ -376,13 +461,14 @@ private fun LiveStreamGrid(
                 ) {
                     val interactionSource = remember { MutableInteractionSource() }
                     val isFocused by interactionSource.collectIsFocusedAsState()
-                    Surface(
-                        onClick = { onStreamSelected(stream) },
-                        interactionSource = interactionSource,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(8.dp))
-                            .border(
+        Surface(
+          onClick = { onStreamSelected(stream) },
+          interactionSource = interactionSource,
+          modifier = Modifier
+            .fillMaxSize()
+            .focusProperties { left = leftFocus }
+            .clip(RoundedCornerShape(8.dp))
+            .border(
                                 width = if (isFocused) 2.dp else 1.dp,
                                 color = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                 shape = RoundedCornerShape(8.dp)
@@ -454,12 +540,13 @@ private fun LiveStreamGrid(
                 }
                 Spacer(Modifier.width(4.dp))
         if (stream.type == ContentType.SERIES && stream.lastEpisodeUrl != null && onPlayEpisodeUrl != null) {
-        Surface(
-            onClick = { onPlayEpisodeUrl(stream.lastEpisodeUrl, stream.lastEpisodeTitle ?: stream.name, -1L) },
-            modifier = Modifier
-                .width(44.dp)
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(8.dp)),
+      Surface(
+        onClick = { onPlayEpisodeUrl(stream.lastEpisodeUrl, stream.lastEpisodeTitle ?: stream.name, -1L) },
+        modifier = Modifier
+          .width(44.dp)
+          .fillMaxHeight()
+          .focusProperties { left = leftFocus }
+          .clip(RoundedCornerShape(8.dp)),
             colors = ClickableSurfaceDefaults.colors(
                 containerColor = MaterialTheme.colorScheme.surface,
                 focusedContainerColor = MaterialTheme.colorScheme.primary,
@@ -481,26 +568,27 @@ private fun LiveStreamGrid(
                     Spacer(Modifier.width(2.dp))
                 }
                 if (stream.type == ContentType.VOD && stream.progress > 0f) {
-        Surface(
-            onClick = { onStreamSelected(stream) },
-            modifier = Modifier
-                .width(44.dp)
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(8.dp)),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                focusedContainerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.primary,
-                focusedContentColor = MaterialTheme.colorScheme.onPrimary,
-                pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                pressedContentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-        ) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Filled.PlayArrow,
-                    contentDescription = "Continuar",
+      Surface(
+        onClick = { onStreamSelected(stream) },
+        modifier = Modifier
+          .width(44.dp)
+          .fillMaxHeight()
+          .focusProperties { left = leftFocus }
+          .clip(RoundedCornerShape(8.dp)),
+        colors = ClickableSurfaceDefaults.colors(
+          containerColor = MaterialTheme.colorScheme.surface,
+          focusedContainerColor = MaterialTheme.colorScheme.primary,
+          contentColor = MaterialTheme.colorScheme.primary,
+          focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+          pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+          pressedContentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+      ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+          Icon(
+            imageVector = Icons.Filled.PlayArrow,
+            contentDescription = "Continuar",
                     modifier = Modifier.size(24.dp)
                 )
                         }
@@ -508,12 +596,13 @@ private fun LiveStreamGrid(
                     Spacer(Modifier.width(2.dp))
                 }
                 val isFav by isFavorite(stream.id).collectAsStateWithLifecycle(initialValue = false)
-        Surface(
-            onClick = { onToggleFavorite(stream) },
-            modifier = Modifier
-                .width(52.dp)
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(8.dp)),
+    Surface(
+      onClick = { onToggleFavorite(stream) },
+      modifier = Modifier
+        .width(52.dp)
+        .fillMaxHeight()
+        .focusProperties { left = leftFocus }
+        .clip(RoundedCornerShape(8.dp)),
             colors = ClickableSurfaceDefaults.colors(
                 containerColor = MaterialTheme.colorScheme.surface,
                 focusedContainerColor = MaterialTheme.colorScheme.primary,
@@ -539,31 +628,34 @@ private fun LiveStreamGrid(
 
 @Composable
 private fun VodStreamGrid(
-    streams: List<Stream>,
-    onStreamSelected: (Stream) -> Unit
+  streams: List<Stream>,
+  onStreamSelected: (Stream) -> Unit,
+  leftFocus: FocusRequester
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 140.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(streams, key = { it.id }) { stream ->
-            val interactionSource = remember { MutableInteractionSource() }
-            val isFocused by interactionSource.collectIsFocusedAsState()
-            Box(
-                modifier = Modifier
-                    .padding(4.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .border(
-                        width = if (isFocused) 2.dp else 0.dp,
-                        color = if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-            ) {
-                Surface(
-                    onClick = { onStreamSelected(stream) },
-                    interactionSource = interactionSource,
-                    modifier = Modifier.aspectRatio(0.7f),
+  LazyVerticalGrid(
+    columns = GridCells.Adaptive(minSize = 140.dp),
+    horizontalArrangement = Arrangement.spacedBy(12.dp),
+    verticalArrangement = Arrangement.spacedBy(12.dp)
+  ) {
+    items(streams, key = { it.id }) { stream ->
+      val interactionSource = remember { MutableInteractionSource() }
+      val isFocused by interactionSource.collectIsFocusedAsState()
+      Box(
+        modifier = Modifier
+          .padding(4.dp)
+          .clip(RoundedCornerShape(8.dp))
+          .border(
+            width = if (isFocused) 2.dp else 0.dp,
+            color = if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent,
+            shape = RoundedCornerShape(8.dp)
+          )
+      ) {
+        Surface(
+          onClick = { onStreamSelected(stream) },
+          interactionSource = interactionSource,
+          modifier = Modifier
+            .aspectRatio(0.7f)
+            .focusProperties { left = leftFocus },
       colors = ClickableSurfaceDefaults.colors(
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
