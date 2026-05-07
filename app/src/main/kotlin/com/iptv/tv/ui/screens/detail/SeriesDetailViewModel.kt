@@ -1,10 +1,8 @@
 package com.iptv.tv.ui.screens.detail
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.iptv.tv.data.local.AppDatabase
 import com.iptv.tv.data.remote.dto.Episode
 import com.iptv.tv.data.remote.dto.SeriesInfo
 import com.iptv.tv.domain.model.Stream
@@ -28,7 +26,8 @@ data class SeriesDetailUiState(
     val isFavorite: Boolean = false,
     val lastEpisodeUrl: String? = null,
     val lastEpisodeNum: Int? = null,
-    val lastSeason: String? = null
+    val lastSeason: String? = null,
+    val episodeProgress: Map<String, Float> = emptyMap()
 )
 
 @HiltViewModel
@@ -36,8 +35,7 @@ class SeriesDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val contentRepository: ContentRepository,
     private val favoritesRepository: FavoritesRepository,
-    private val watchHistoryRepository: WatchHistoryRepository,
-    private val appDatabase: AppDatabase
+    private val watchHistoryRepository: WatchHistoryRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SeriesDetailUiState())
@@ -46,10 +44,6 @@ class SeriesDetailViewModel @Inject constructor(
     private val streamId: String = java.net.URLDecoder.decode(
         savedStateHandle.get<String>("streamId") ?: "", "UTF-8"
     )
-
-    init {
-        Log.d("SeriesDebug", "ViewModel streamId: '$streamId'")
-    }
 
     private var stream: Stream? = null
 
@@ -61,6 +55,7 @@ class SeriesDetailViewModel @Inject constructor(
         viewModelScope.launch {
             loadHistory()
             loadSeriesInfo()
+            loadEpisodeProgress()
             observeFavorite()
         }
     }
@@ -69,10 +64,6 @@ class SeriesDetailViewModel @Inject constructor(
         try {
             val history = watchHistoryRepository.getAllHistory().first()
             val entry = history.firstOrNull { it.streamId == streamId }
-            Log.d("SeriesDebug", "História total: ${history.size} entradas")
-            Log.d("SeriesDebug", "Entradas: ${history.map { "${it.streamId} -> ${it.lastEpisodeUrl}" }}")
-            Log.d("SeriesDebug", "Entry encontrada para '$streamId': $entry")
-            appDatabase.logWatchHistorySchema()
             _uiState.value = _uiState.value.copy(
                 lastEpisodeUrl = entry?.lastEpisodeUrl,
                 lastEpisodeNum = entry?.lastEpisodeNum,
@@ -80,6 +71,19 @@ class SeriesDetailViewModel @Inject constructor(
             )
         } catch (e: Exception) {
         }
+    }
+
+    private suspend fun loadEpisodeProgress() {
+        val episodes = _uiState.value.episodes?.values?.flatten() ?: emptyList()
+        val progressMap = mutableMapOf<String, Float>()
+        episodes.forEach { episode ->
+            val url = episode.directSource ?: return@forEach
+            val epEntry = watchHistoryRepository.getHistoryEntry(url)
+            if (epEntry != null && epEntry.progress > 0f) {
+                progressMap[url] = epEntry.progress
+            }
+        }
+        _uiState.value = _uiState.value.copy(episodeProgress = progressMap)
     }
 
     private suspend fun loadSeriesInfo() {
@@ -91,8 +95,8 @@ class SeriesDetailViewModel @Inject constructor(
             val historySeason = _uiState.value.lastSeason
             val firstSeason = response.episodes?.keys?.minOrNull() ?: ""
             val selectedSeason = if (!historySeason.isNullOrBlank() &&
-                response.episodes?.containsKey(historySeason) == true)
-                historySeason
+                response.episodes?.containsKey(historySeason) == true
+            ) historySeason
             else firstSeason
 
             _uiState.value = _uiState.value.copy(
@@ -124,7 +128,6 @@ class SeriesDetailViewModel @Inject constructor(
     }
 
     fun addToHistory(s: Stream, episode: Episode, season: String) {
-        Log.d("SeriesDebug", "Salvando histórico: streamId='${s.id}' ep=${episode.episodeNum} season=$season url=${episode.directSource}")
         viewModelScope.launch {
             watchHistoryRepository.addToHistory(
                 stream = s,
@@ -135,6 +138,7 @@ class SeriesDetailViewModel @Inject constructor(
                 episodeUrl = episode.directSource
             )
             loadHistory()
+            loadEpisodeProgress()
         }
     }
 

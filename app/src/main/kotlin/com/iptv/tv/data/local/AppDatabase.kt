@@ -1,6 +1,5 @@
 package com.iptv.tv.data.local
 
-import android.util.Log
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
@@ -84,18 +83,4 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun streamDao(): StreamDao
     abstract fun favoriteDao(): FavoriteDao
     abstract fun watchHistoryDao(): WatchHistoryDao
-
-    suspend fun logWatchHistorySchema() {
-        val db = openHelper.readableDatabase
-        Log.d("DBDebug", "Database version: ${db.version}")
-        val cursor = db.query("PRAGMA table_info(watch_history)")
-        val columns = mutableListOf<String>()
-        cursor.use {
-            while (it.moveToNext()) {
-                val nameIndex = it.getColumnIndex("name")
-                if (nameIndex >= 0) columns.add(it.getString(nameIndex))
-            }
-        }
-        Log.d("DBDebug", "Colunas reais: $columns")
-    }
 }

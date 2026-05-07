@@ -54,7 +54,7 @@ import com.iptv.tv.domain.model.Stream
 @Composable
 fun SeriesDetailScreen(
     stream: Stream,
-    onPlayEpisode: (String, String) -> Unit,
+    onPlayEpisode: (String, String, Long) -> Unit,
     onBack: () -> Unit,
     viewModel: SeriesDetailViewModel = hiltViewModel()
 ) {
@@ -135,7 +135,7 @@ fun SeriesDetailScreen(
                                     if (stream.name.isNotBlank() && stream.id.isNotBlank()) {
                                         viewModel.addToHistory(stream, episode, season)
                                     }
-                                    episode.directSource?.let { url -> onPlayEpisode(url, episode.title ?: stream.name) }
+                                    episode.directSource?.let { url -> onPlayEpisode(url, episode.title ?: stream.name, -1L) }
                                 }
                             },
                             uiState = uiState
@@ -168,19 +168,22 @@ fun SeriesDetailScreen(
                         )
                     }
 
-                    itemsIndexed(viewModel.getEpisodesForSelectedSeason()) { index, episode ->
-                        EpisodeItem(
-                            episode = episode,
-                            onClick = {
-                                if (stream.name.isNotBlank() && stream.id.isNotBlank()) {
-                                    viewModel.addToHistory(stream, episode, uiState.selectedSeason)
-                                }
-                                val streamUrl = episode.directSource
-                                    ?: "${episode.id}.${episode.containerExtension}"
-                                onPlayEpisode(streamUrl, episode.title ?: "Episódio ${episode.episodeNum}")
-                            },
-                            modifier = Modifier
-                        )
+            itemsIndexed(viewModel.getEpisodesForSelectedSeason()) { index, episode ->
+                val epUrl = episode.directSource ?: ""
+                val epProgress = uiState.episodeProgress[epUrl] ?: 0f
+                EpisodeItem(
+                    episode = episode,
+                    episodeProgress = epProgress,
+                    onClick = {
+                        if (stream.name.isNotBlank() && stream.id.isNotBlank()) {
+                            viewModel.addToHistory(stream, episode, uiState.selectedSeason)
+                        }
+                        val streamUrl = episode.directSource
+                            ?: "${episode.id}.${episode.containerExtension}"
+                        onPlayEpisode(streamUrl, episode.title ?: "Episódio ${episode.episodeNum}", if (epProgress > 0.05f) -1L else 0L)
+                    },
+                    modifier = Modifier
+                )
                     }
                 }
             }
@@ -474,6 +477,7 @@ private fun SeasonSelector(
 @Composable
 private fun EpisodeItem(
     episode: Episode,
+    episodeProgress: Float = 0f,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -492,49 +496,67 @@ private fun EpisodeItem(
         ),
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Box(
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
                 modifier = Modifier
-                    .size(40.dp)
-                    .background(
-                        MaterialTheme.colorScheme.surfaceVariant,
-                        RoundedCornerShape(4.dp)
-                    ),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = "${episode.episodeNum}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = episode.title ?: "Episódio ${episode.episodeNum}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1
-                )
-                episode.info?.duration?.let { duration ->
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            RoundedCornerShape(4.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
-                        text = duration,
-                        style = MaterialTheme.typography.bodySmall,
+                        text = "${episode.episodeNum}",
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
 
-            Icon(
-                imageVector = Icons.Filled.PlayArrow,
-                contentDescription = "Reproduzir",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = episode.title ?: "Episódio ${episode.episodeNum}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1
+                    )
+                    episode.info?.duration?.let { duration ->
+                        Text(
+                            text = duration,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = "Reproduzir",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (episodeProgress > 0.05f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(episodeProgress)
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.primary)
+                    )
+                }
+            }
         }
     }
 }

@@ -52,7 +52,7 @@ private val CATEGORIES_PANEL_WIDTH = 260.dp
 @Composable
 fun HomeScreen(
     onStreamSelected: (Stream) -> Unit,
-    onPlayEpisode: ((String, String) -> Unit)? = null,
+    onPlayEpisode: ((String, String, Long) -> Unit)? = null,
     onNavigateToFavorites: () -> Unit,
     onNavigateToSettings: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
@@ -357,9 +357,9 @@ LiveStreamGrid(
                                 },
                                 onToggleFavorite = { viewModel.toggleFavorite(it) },
                                 isFavorite = { viewModel.isFavorite(it) },
-        onPlayEpisodeUrl = { url, name ->
-            onPlayEpisode?.invoke(url, name)
-            }
+                    onPlayEpisodeUrl = { url, name, startPosition ->
+                        onPlayEpisode?.invoke(url, name, startPosition)
+                    }
                             )
                         } else {
                             VodStreamGrid(streams = state.streams.filter { it.name.contains(state.streamSearch, ignoreCase = true) }, onStreamSelected = {
@@ -422,7 +422,7 @@ private fun LiveStreamGrid(
     onStreamSelected: (Stream) -> Unit,
     onToggleFavorite: (Stream) -> Unit,
     isFavorite: (String) -> Flow<Boolean>,
-    onPlayEpisodeUrl: ((String, String) -> Unit)? = null
+    onPlayEpisodeUrl: ((String, String, Long) -> Unit)? = null
 ) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         itemsIndexed(streams) { _, stream ->
@@ -501,9 +501,9 @@ private fun LiveStreamGrid(
                     }
                 }
                 Spacer(Modifier.width(4.dp))
-                if (stream.type == ContentType.SERIES && stream.lastEpisodeUrl != null && onPlayEpisodeUrl != null) {
-                    Surface(
-                        onClick = { onPlayEpisodeUrl(stream.lastEpisodeUrl, stream.lastEpisodeTitle ?: stream.name) },
+        if (stream.type == ContentType.SERIES && stream.lastEpisodeUrl != null && onPlayEpisodeUrl != null) {
+            Surface(
+                onClick = { onPlayEpisodeUrl(stream.lastEpisodeUrl, stream.lastEpisodeTitle ?: stream.name, -1L) },
                         modifier = Modifier
                             .width(44.dp)
                             .fillMaxHeight(),

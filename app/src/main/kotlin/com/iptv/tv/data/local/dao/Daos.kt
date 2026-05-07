@@ -1,7 +1,6 @@
 package com.iptv.tv.data.local.dao
 
 import androidx.room.*
-import android.util.Log
 import com.iptv.tv.data.local.entity.CategoryEntity
 import com.iptv.tv.data.local.entity.StreamEntity
 import com.iptv.tv.data.local.entity.FavoriteEntity
@@ -85,10 +84,6 @@ interface FavoriteDao {
     }
 }
 
-data class TableInfoEntity(
-    val name: String
-)
-
 @Dao
 interface WatchHistoryDao {
 
@@ -148,10 +143,6 @@ interface WatchHistoryDao {
             lastSeason = lastSeason ?: existing?.lastSeason,
             lastEpisodeUrl = lastEpisodeUrl ?: existing?.lastEpisodeUrl
         )
-        try {
-            insert(entity)
-        } catch (e: Exception) {
-            Log.e("DBDebug", "Insert falhou: ${e.message}", e)
-        }
+        insert(entity)
     }
 }

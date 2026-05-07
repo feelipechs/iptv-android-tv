@@ -123,15 +123,16 @@ fun IPTVNavHost() {
                         }
                     }
                 },
-                onPlayEpisode = { episodeUrl, episodeName ->
-                    navController.navigate(
-                        Screen.Player.route(
-                            "",
-                            java.net.URLEncoder.encode(episodeUrl, "UTF-8"),
-                            java.net.URLEncoder.encode(episodeName, "UTF-8")
-                        )
+            onPlayEpisode = { episodeUrl, episodeName, startPosition ->
+                navController.navigate(
+                    Screen.Player.route(
+                        java.net.URLEncoder.encode(episodeUrl, "UTF-8"),
+                        java.net.URLEncoder.encode(episodeUrl, "UTF-8"),
+                        java.net.URLEncoder.encode(episodeName, "UTF-8"),
+                        startPosition
                     )
-                },
+                )
+            },
                 onNavigateToFavorites = {
                     navController.navigate(Screen.Favorites.route)
                 },
@@ -243,15 +244,16 @@ fun IPTVNavHost() {
 
             SeriesDetailScreen(
                 stream = stream,
-                onPlayEpisode = { episodeUrl, episodeName ->
-                    navController.navigate(
-                        Screen.Player.route(
-                            "",
-                            java.net.URLEncoder.encode(episodeUrl, "UTF-8"),
-                            java.net.URLEncoder.encode(episodeName, "UTF-8")
-                        )
+            onPlayEpisode = { episodeUrl, episodeName, startPosition ->
+                navController.navigate(
+                    Screen.Player.route(
+                        java.net.URLEncoder.encode(episodeUrl, "UTF-8"),
+                        java.net.URLEncoder.encode(episodeUrl, "UTF-8"),
+                        java.net.URLEncoder.encode(episodeName, "UTF-8"),
+                        startPosition
                     )
-                },
+                )
+            },
                 onBack = { navController.popBackStack() }
             )
         }

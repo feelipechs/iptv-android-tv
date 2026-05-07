@@ -1,6 +1,5 @@
 package com.iptv.tv.ui.screens.detail
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iptv.tv.data.remote.api.XtreamApiService
@@ -51,9 +50,7 @@ class DetailViewModel @Inject constructor(
     private fun loadProgress(streamId: String) {
         viewModelScope.launch {
             val entry = watchHistoryRepository.getHistoryEntry(streamId)
-            Log.d("VodDebug", "loadProgress streamId='$streamId' entry=$entry")
             _savedProgress.value = if (entry != null && entry.progress > 0f) entry.progress else null
-            Log.d("VodDebug", "savedProgress definido como: ${_savedProgress.value}")
         }
     }
 
