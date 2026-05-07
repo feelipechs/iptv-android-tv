@@ -6,6 +6,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -14,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -22,6 +25,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.*
@@ -35,8 +39,6 @@ fun LoginScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // FIX: observa apenas isLoggedIn (login feito agora), nunca isAlreadyLoggedIn.
-    // Isso impede que LoginEdit navegue automaticamente ao abrir quando já há credenciais salvas.
     LaunchedEffect(state.isLoggedIn) {
         if (state.isLoggedIn) onLoginSuccess()
     }
@@ -50,6 +52,13 @@ fun LoginScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let { viewModel.onM3uSourceChange(it.toString()) }
+    }
+
+    val isXtreamValid = state.server.isNotBlank() && state.username.isNotBlank() && state.password.isNotBlank()
+    val isM3uValid = state.m3uSource.isNotBlank()
+    val canLogin = when (state.providerType) {
+        ProviderType.XTREAM -> isXtreamValid
+        ProviderType.M3U_LIST -> isM3uValid
     }
 
     Box(
@@ -69,15 +78,24 @@ fun LoginScreen(
                     Surface(
                         onClick = onBack,
                         colors = ClickableSurfaceDefaults.colors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            focusedContainerColor = MaterialTheme.colorScheme.primary,
+                            focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                            pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                            pressedContentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
                     ) {
-                        Text(
-                            text = "← Cancelar",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(8.dp)
-                        )
+                        Box(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "← Cancelar",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
                     }
                 }
             }
@@ -91,17 +109,47 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Button(
+                val isXtream = state.providerType == ProviderType.XTREAM
+                Surface(
                     onClick = { viewModel.onProviderTypeChange(ProviderType.XTREAM) },
-                    modifier = Modifier.weight(1f).height(48.dp)
+                    modifier = Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(8.dp)),
+                    colors = ClickableSurfaceDefaults.colors(
+                        containerColor = if (isXtream) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (isXtream) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.primary,
+                        focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                        pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        pressedContentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
                 ) {
-                    Text(if (state.providerType == ProviderType.XTREAM) "[Xtream]" else "Xtream")
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            "Xtream",
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
-                Button(
+                val isM3u = state.providerType == ProviderType.M3U_LIST
+                Surface(
                     onClick = { viewModel.onProviderTypeChange(ProviderType.M3U_LIST) },
-                    modifier = Modifier.weight(1f).height(48.dp)
+                    modifier = Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(8.dp)),
+                    colors = ClickableSurfaceDefaults.colors(
+                        containerColor = if (isM3u) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (isM3u) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.primary,
+                        focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                        pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        pressedContentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
                 ) {
-                    Text(if (state.providerType == ProviderType.M3U_LIST) "[M3U]" else "M3U")
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            "M3U",
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
 
@@ -174,13 +222,25 @@ fun LoginScreen(
                         )
                     }
 
-                    Button(
+                    Surface(
                         onClick = { filePicker.launch("*/*") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(8.dp)),
+                        colors = ClickableSurfaceDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            focusedContainerColor = MaterialTheme.colorScheme.primary,
+                            focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                            pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                            pressedContentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
                     ) {
-                        Text(
-                            text = if (state.m3uSource.isNotEmpty()) "Arquivo selecionado" else "Selecionar arquivo local"
-                        )
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = if (state.m3uSource.isNotEmpty()) "Arquivo selecionado" else "Selecionar arquivo local",
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
             }
@@ -193,15 +253,31 @@ fun LoginScreen(
                 )
             }
 
-            Button(
-                onClick = viewModel::login,
-                enabled = !state.isLoading,
-                modifier = Modifier.fillMaxWidth().height(52.dp)
+            Surface(
+                onClick = { if (canLogin && !state.isLoading) viewModel.login() },
+                modifier = Modifier.fillMaxWidth().height(52.dp).clip(RoundedCornerShape(8.dp)),
+                colors = ClickableSurfaceDefaults.colors(
+                    containerColor = if (canLogin) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    contentColor = if (canLogin) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                    focusedContainerColor = if (canLogin) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    focusedContentColor = if (canLogin) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                    pressedContainerColor = if (canLogin) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    pressedContentColor = if (canLogin) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                ),
+                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
             ) {
-                if (state.isLoading) {
-                    Text("Carregando...")
-                } else {
-                    Text("Entrar")
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    if (state.isLoading) {
+                        Text(
+                            "Carregando...",
+                            textAlign = TextAlign.Center
+                        )
+                    } else {
+                        Text(
+                            "Entrar",
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }

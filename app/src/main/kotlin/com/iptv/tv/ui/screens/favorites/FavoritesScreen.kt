@@ -1,6 +1,10 @@
 package com.iptv.tv.ui.screens.favorites
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -33,17 +38,22 @@ fun FavoritesScreen(
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 48.dp, vertical = 24.dp)) {
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+    Row(
+        modifier = Modifier.fillMaxWidth().focusGroup(),
+        horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    onClick = onBack,
-                    colors = ClickableSurfaceDefaults.colors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
+        Surface(
+            onClick = onBack,
+            colors = ClickableSurfaceDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                focusedContainerColor = MaterialTheme.colorScheme.primary,
+                focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                pressedContentColor = MaterialTheme.colorScheme.onPrimary
+            ),
                     shape = ClickableSurfaceDefaults.shape(shape = MaterialTheme.shapes.small),
                     modifier = Modifier.padding(end = 16.dp)
                 ) {
@@ -55,12 +65,16 @@ fun FavoritesScreen(
                 )
             }
             if (state.history.isNotEmpty()) {
-                Surface(
-                    onClick = viewModel::clearHistory,
-                    colors = ClickableSurfaceDefaults.colors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
-                    ),
+        Surface(
+            onClick = viewModel::clearHistory,
+            colors = ClickableSurfaceDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                focusedContainerColor = MaterialTheme.colorScheme.error,
+                focusedContentColor = MaterialTheme.colorScheme.onError,
+                pressedContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                pressedContentColor = MaterialTheme.colorScheme.onError
+            ),
                     shape = ClickableSurfaceDefaults.shape(shape = MaterialTheme.shapes.small)
                 ) {
                     Row(
@@ -165,22 +179,35 @@ private fun FavoriteItem(
         modifier = Modifier.fillMaxWidth().height(80.dp),
         horizontalArrangement = Arrangement.spacedBy(0.dp)
     ) {
+        val interactionSource = remember { MutableInteractionSource() }
+        val isFocused by interactionSource.collectIsFocusedAsState()
         Surface(
             onClick = onClick,
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                focusedContainerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                focusedContentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            shape = ClickableSurfaceDefaults.shape(shape = MaterialTheme.shapes.small)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxSize().padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (favorite.posterUrl != null) {
+            interactionSource = interactionSource,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(8.dp))
+                .border(
+                    width = if (isFocused) 2.dp else 0.dp,
+                    color = if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    shape = RoundedCornerShape(8.dp)
+                ),
+      colors = ClickableSurfaceDefaults.colors(
+        containerColor = MaterialTheme.colorScheme.surface,
+        focusedContainerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        focusedContentColor = MaterialTheme.colorScheme.onSurface,
+        pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+        pressedContentColor = MaterialTheme.colorScheme.onPrimary
+      ),
+      shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+    ) {
+      Row(
+        modifier = Modifier.fillMaxSize().padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        if (favorite.posterUrl != null) {
                     AsyncImage(
                         model = favorite.posterUrl,
                         contentDescription = null,
@@ -212,14 +239,16 @@ private fun FavoriteItem(
         
         Surface(
             onClick = onRemove,
-            modifier = Modifier.size(56.dp).fillMaxHeight(),
+            modifier = Modifier.size(56.dp).fillMaxHeight().clip(RoundedCornerShape(8.dp)),
             colors = ClickableSurfaceDefaults.colors(
                 containerColor = MaterialTheme.colorScheme.errorContainer,
                 focusedContainerColor = MaterialTheme.colorScheme.error,
                 contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                focusedContentColor = MaterialTheme.colorScheme.onError
+                focusedContentColor = MaterialTheme.colorScheme.onError,
+                pressedContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                pressedContentColor = MaterialTheme.colorScheme.onError
             ),
-            shape = ClickableSurfaceDefaults.shape(shape = MaterialTheme.shapes.small)
+            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
         ) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -245,22 +274,35 @@ private fun HistoryItem(
         modifier = Modifier.fillMaxWidth().height(80.dp),
         horizontalArrangement = Arrangement.spacedBy(0.dp)
     ) {
+        val interactionSource = remember { MutableInteractionSource() }
+        val isFocused by interactionSource.collectIsFocusedAsState()
         Surface(
             onClick = onClick,
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                focusedContainerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                focusedContentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            shape = ClickableSurfaceDefaults.shape(shape = MaterialTheme.shapes.small)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxSize().padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (entry.posterUrl != null) {
+            interactionSource = interactionSource,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(8.dp))
+                .border(
+                    width = if (isFocused) 2.dp else 0.dp,
+                    color = if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    shape = RoundedCornerShape(8.dp)
+                ),
+      colors = ClickableSurfaceDefaults.colors(
+        containerColor = MaterialTheme.colorScheme.surface,
+        focusedContainerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        focusedContentColor = MaterialTheme.colorScheme.onSurface,
+        pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+        pressedContentColor = MaterialTheme.colorScheme.onPrimary
+      ),
+      shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+    ) {
+      Row(
+        modifier = Modifier.fillMaxSize().padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        if (entry.posterUrl != null) {
                     AsyncImage(
                         model = entry.posterUrl,
                         contentDescription = null,
@@ -310,14 +352,16 @@ private fun HistoryItem(
         
         Surface(
             onClick = onDelete,
-            modifier = Modifier.size(56.dp).fillMaxHeight(),
+            modifier = Modifier.size(56.dp).fillMaxHeight().clip(RoundedCornerShape(8.dp)),
             colors = ClickableSurfaceDefaults.colors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 focusedContainerColor = MaterialTheme.colorScheme.error,
                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                focusedContentColor = MaterialTheme.colorScheme.onError
+                focusedContentColor = MaterialTheme.colorScheme.onError,
+                pressedContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                pressedContentColor = MaterialTheme.colorScheme.onError
             ),
-            shape = ClickableSurfaceDefaults.shape(shape = MaterialTheme.shapes.small)
+            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
         ) {
             Box(
                 modifier = Modifier.fillMaxSize(),

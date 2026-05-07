@@ -7,10 +7,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -53,18 +54,22 @@ fun EditCredentialsScreen(
                 .padding(bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                onClick = onBack,
-                modifier = Modifier.size(48.dp),
-                colors = ClickableSurfaceDefaults.colors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    focusedContainerColor = MaterialTheme.colorScheme.primary
-                ),
-                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-            ) {
+      Surface(
+        onClick = onBack,
+        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)),
+        colors = ClickableSurfaceDefaults.colors(
+          containerColor = MaterialTheme.colorScheme.surface,
+          focusedContainerColor = MaterialTheme.colorScheme.surface,
+          contentColor = MaterialTheme.colorScheme.onSurface,
+          focusedContentColor = MaterialTheme.colorScheme.onSurface,
+          pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+          pressedContentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+      ) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector = Icons.Filled.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Voltar",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
@@ -123,23 +128,34 @@ fun EditCredentialsScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            Button(
-                onClick = {
-                    val updated = when (credentials.providerType) {
-                        ProviderType.XTREAM -> credentials.copy(
-                            server = server,
-                            username = username,
-                            password = password
-                        )
-                        ProviderType.M3U_LIST -> credentials.copy(m3uSource = m3uSource)
-                    }
-                    onSave(updated)
-                    onBack()
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Salvar")
-            }
+      Surface(
+        onClick = {
+          val updated = when (credentials.providerType) {
+            ProviderType.XTREAM -> credentials.copy(
+              server = server,
+              username = username,
+              password = password
+            )
+            ProviderType.M3U_LIST -> credentials.copy(m3uSource = m3uSource)
+          }
+          onSave(updated)
+          onBack()
+        },
+        modifier = Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(8.dp)),
+        colors = ClickableSurfaceDefaults.colors(
+          containerColor = MaterialTheme.colorScheme.primary,
+          focusedContainerColor = MaterialTheme.colorScheme.primary,
+          contentColor = MaterialTheme.colorScheme.onPrimary,
+          focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+          pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+          pressedContentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+      ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+          Text("Salvar")
+        }
+      }
         }
     }
 }

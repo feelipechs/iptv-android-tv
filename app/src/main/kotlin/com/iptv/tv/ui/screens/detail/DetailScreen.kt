@@ -1,6 +1,9 @@
 package com.iptv.tv.ui.screens.detail
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
@@ -38,6 +41,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
 import androidx.tv.material3.Icon
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
@@ -64,8 +68,11 @@ fun DetailScreen(
 
     val savedProgress by viewModel.savedProgress.collectAsStateWithLifecycle()
 
-    val playButtonFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { playButtonFocusRequester.requestFocus() }
+val playButtonFocusRequester = remember { FocusRequester() }
+LaunchedEffect(Unit) {
+    delay(100)
+    playButtonFocusRequester.requestFocus()
+}
 
     Box(
         modifier = Modifier
@@ -83,18 +90,30 @@ fun DetailScreen(
                     .padding(start = 8.dp, top = 16.dp, end = 16.dp, bottom = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    onClick = onBack,
-                    modifier = Modifier.size(48.dp),
-                    colors = ClickableSurfaceDefaults.colors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        focusedContainerColor = MaterialTheme.colorScheme.primary
-                    ),
-                    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-                ) {
+        val backInteractionSource = remember { MutableInteractionSource() }
+        val backFocused by backInteractionSource.collectIsFocusedAsState()
+        Surface(
+          onClick = onBack,
+          modifier = Modifier
+            .size(48.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .then(
+              if (backFocused) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+              else Modifier
+            ),
+          colors = ClickableSurfaceDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            focusedContentColor = MaterialTheme.colorScheme.onSurface,
+            pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+            pressedContentColor = MaterialTheme.colorScheme.onPrimary
+          ),
+          shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+        ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Icon(
-                            Icons.Filled.ArrowBack, contentDescription = "Voltar",
+                            Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -172,17 +191,21 @@ fun DetailScreen(
                 val showContinue = progress != null && progress > 0.05f
 
                 if (showContinue) {
-                    Surface(
-                        onClick = { onPlay(stream, -1L) },
-                            modifier = Modifier.focusRequester(playButtonFocusRequester),
-                            colors = ClickableSurfaceDefaults.colors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                focusedContainerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                                focusedContentColor = MaterialTheme.colorScheme.onPrimary
-                            ),
-                            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-                        ) {
+      Surface(
+        onClick = { onPlay(stream, -1L) },
+        modifier = Modifier
+          .focusRequester(playButtonFocusRequester)
+          .clip(RoundedCornerShape(8.dp)),
+        colors = ClickableSurfaceDefaults.colors(
+          containerColor = MaterialTheme.colorScheme.primary,
+          focusedContainerColor = MaterialTheme.colorScheme.primary,
+          contentColor = MaterialTheme.colorScheme.onPrimary,
+          focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+          pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+          pressedContentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+      ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -201,22 +224,25 @@ fun DetailScreen(
                             }
                         }
 
-                        Surface(
-                        onClick = { onPlay(stream, 0L) },
-                        colors = ClickableSurfaceDefaults.colors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                focusedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            ),
-                            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Replay,
+      Surface(
+        onClick = { onPlay(stream, 0L) },
+        modifier = Modifier.clip(RoundedCornerShape(8.dp)),
+        colors = ClickableSurfaceDefaults.colors(
+          containerColor = MaterialTheme.colorScheme.surfaceVariant,
+          focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+          contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+          focusedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+          pressedContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+          pressedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        ),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+      ) {
+        Row(
+          modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Icon(
+            imageVector = Icons.Filled.Replay,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -229,17 +255,21 @@ fun DetailScreen(
                             }
                         }
                     } else {
-                    Surface(
-                        onClick = { onPlay(stream, 0L) },
-                        modifier = Modifier.focusRequester(playButtonFocusRequester),
-                            colors = ClickableSurfaceDefaults.colors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                focusedContainerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                                focusedContentColor = MaterialTheme.colorScheme.onPrimary
-                            ),
-                            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-                        ) {
+      Surface(
+        onClick = { onPlay(stream, 0L) },
+        modifier = Modifier
+          .focusRequester(playButtonFocusRequester)
+          .clip(RoundedCornerShape(8.dp)),
+        colors = ClickableSurfaceDefaults.colors(
+          containerColor = MaterialTheme.colorScheme.primary,
+          focusedContainerColor = MaterialTheme.colorScheme.primary,
+          contentColor = MaterialTheme.colorScheme.onPrimary,
+          focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+          pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+          pressedContentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+      ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -259,15 +289,18 @@ fun DetailScreen(
                         }
                     }
 
-                            Surface(
-                                onClick = { viewModel.toggleFavorite(stream) },
-                                colors = ClickableSurfaceDefaults.colors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                    focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    focusedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            ) {
+      Surface(
+        onClick = { viewModel.toggleFavorite(stream) },
+        modifier = Modifier.clip(RoundedCornerShape(8.dp)),
+        colors = ClickableSurfaceDefaults.colors(
+          containerColor = MaterialTheme.colorScheme.surfaceVariant,
+          focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+          contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+          focusedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+          pressedContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+          pressedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+      ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically

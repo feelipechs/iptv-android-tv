@@ -2,6 +2,9 @@ package com.iptv.tv.ui.screens.detail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +22,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
@@ -94,22 +97,34 @@ fun SeriesDetailScreen(
                             .padding(start = 8.dp, end = 16.dp, bottom = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Surface(
-                            onClick = onBack,
-                            modifier = Modifier.size(48.dp),
-                            colors = ClickableSurfaceDefaults.colors(
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                focusedContainerColor = MaterialTheme.colorScheme.primary
-                            ),
-                            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-                        ) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Filled.ArrowBack, contentDescription = "Voltar",
-                                    tint = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
+        val backInteractionSource = remember { MutableInteractionSource() }
+        val backFocused by backInteractionSource.collectIsFocusedAsState()
+        Surface(
+          onClick = onBack,
+          modifier = Modifier
+            .size(48.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .then(
+              if (backFocused) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+              else Modifier
+            ),
+          colors = ClickableSurfaceDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            focusedContentColor = MaterialTheme.colorScheme.onSurface,
+            pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+            pressedContentColor = MaterialTheme.colorScheme.onPrimary
+          ),
+          shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+        ) {
+          Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Icon(
+              Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar",
+              tint = MaterialTheme.colorScheme.onSurface
+            )
+          }
+        }
                         Text(
                             text = "Série",
                             style = MaterialTheme.typography.titleLarge,
@@ -243,22 +258,27 @@ private fun SeriesHeader(
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+        Row(
+            Modifier.focusGroup(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
             ) {
                 if (resumeUrl != null) {
-                    Surface(
-                        onClick = onPlayClick,
-                        modifier = Modifier.focusRequester(playButtonFocusRequester),
-                        colors = ClickableSurfaceDefaults.colors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            focusedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            focusedContentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-                    ) {
+      Surface(
+        onClick = onPlayClick,
+        modifier = Modifier
+          .focusRequester(playButtonFocusRequester)
+          .clip(RoundedCornerShape(8.dp)),
+        colors = ClickableSurfaceDefaults.colors(
+          containerColor = MaterialTheme.colorScheme.primary,
+          focusedContainerColor = MaterialTheme.colorScheme.primary,
+          contentColor = MaterialTheme.colorScheme.onPrimary,
+          focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+          pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+          pressedContentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+      ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -288,17 +308,20 @@ private fun SeriesHeader(
                     }
                 }
 
-                Surface(
-                    onClick = onToggleFavorite,
-                    colors = ClickableSurfaceDefaults.colors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = if (isFavorite) MaterialTheme.colorScheme.error
-                                       else MaterialTheme.colorScheme.onSurfaceVariant,
-                        focusedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    ),
-                    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-                ) {
+      Surface(
+        onClick = onToggleFavorite,
+        modifier = Modifier.clip(RoundedCornerShape(8.dp)),
+        colors = ClickableSurfaceDefaults.colors(
+          containerColor = MaterialTheme.colorScheme.surfaceVariant,
+          focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+          contentColor = if (isFavorite) MaterialTheme.colorScheme.error
+          else MaterialTheme.colorScheme.onSurfaceVariant,
+          focusedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+          pressedContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+          pressedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        ),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+      ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -445,24 +468,27 @@ private fun SeasonSelector(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 4.dp)
-        ) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 4.dp),
+        modifier = Modifier.focusGroup()
+    ) {
             itemsIndexed(seasons) { index, season ->
                 val isSelected = season == selectedSeason
-                Surface(
-                    onClick = { onSeasonSelected(season) },
-                    colors = ClickableSurfaceDefaults.colors(
-                        containerColor = if (isSelected) MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.surfaceVariant,
-                        focusedContainerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                                      else MaterialTheme.colorScheme.onSurfaceVariant,
-                        focusedContentColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-                ) {
+        Surface(
+          onClick = { onSeasonSelected(season) },
+          colors = ClickableSurfaceDefaults.colors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.surfaceVariant,
+            focusedContainerColor = MaterialTheme.colorScheme.primary,
+            contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+            focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+            pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+            pressedContentColor = MaterialTheme.colorScheme.onPrimary
+          ),
+          shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+        ) {
                     Text(
                         text = season,
                         style = MaterialTheme.typography.labelLarge,
@@ -476,26 +502,33 @@ private fun SeasonSelector(
 
 @Composable
 private fun EpisodeItem(
-    episode: Episode,
-    episodeProgress: Float = 0f,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+  episode: Episode,
+  episodeProgress: Float = 0f,
+  onClick: () -> Unit,
+  modifier: Modifier = Modifier
 ) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 32.dp)
-            .height(56.dp)
-            .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp)),
-        colors = ClickableSurfaceDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            focusedContainerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            focusedContentColor = MaterialTheme.colorScheme.onPrimary
-        ),
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-    ) {
+  val interactionSource = remember { MutableInteractionSource() }
+  val isFocused by interactionSource.collectIsFocusedAsState()
+  Surface(
+    onClick = onClick,
+    modifier = modifier
+      .fillMaxWidth()
+      .padding(horizontal = 32.dp)
+      .clip(RoundedCornerShape(8.dp))
+      .then(
+        if (isFocused) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+        else Modifier
+      ),
+    colors = ClickableSurfaceDefaults.colors(
+      containerColor = MaterialTheme.colorScheme.surface,
+      focusedContainerColor = MaterialTheme.colorScheme.surface,
+      contentColor = MaterialTheme.colorScheme.onSurface,
+      focusedContentColor = MaterialTheme.colorScheme.onSurface,
+      pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+      pressedContentColor = MaterialTheme.colorScheme.onPrimary
+    ),
+    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+  ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Row(
                 modifier = Modifier

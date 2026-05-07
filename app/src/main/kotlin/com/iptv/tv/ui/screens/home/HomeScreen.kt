@@ -2,6 +2,7 @@ package com.iptv.tv.ui.screens.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,32 +11,29 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.filled.Favorite
 
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import kotlinx.coroutines.flow.Flow
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -45,6 +43,7 @@ import coil.compose.AsyncImage
 import com.iptv.tv.domain.model.Category
 import com.iptv.tv.domain.model.ContentType
 import com.iptv.tv.domain.model.Stream
+import com.iptv.tv.ui.components.TvSearchField
 
 private val MAIN_PANEL_WIDTH = 72.dp
 private val CATEGORIES_PANEL_WIDTH = 260.dp
@@ -58,7 +57,9 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val localFocusManager = LocalFocusManager.current
+
+    val firstCategoryFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { firstCategoryFocus.requestFocus() }
 
     Row(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
 
@@ -67,6 +68,7 @@ fun HomeScreen(
             modifier = Modifier
                 .width(MAIN_PANEL_WIDTH)
                 .fillMaxHeight()
+                .focusGroup()
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(vertical = 8.dp, horizontal = 4.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -88,21 +90,23 @@ fun HomeScreen(
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
-                    colors = ClickableSurfaceDefaults.colors(
-                        containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                                         else MaterialTheme.colorScheme.surface,
-                        focusedContainerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                        focusedContentColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-                ) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        colors = ClickableSurfaceDefaults.colors(
+          containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+          else MaterialTheme.colorScheme.surface,
+          focusedContainerColor = MaterialTheme.colorScheme.primary,
+          contentColor = MaterialTheme.colorScheme.onSurface,
+          focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+          pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+          pressedContentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+      ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = when (item) {
                                 MainMenuItem.LIVE -> Icons.Filled.PlayArrow
                                 MainMenuItem.VOD -> Icons.Filled.Home
-                                MainMenuItem.SERIES -> Icons.Filled.List
+                                MainMenuItem.SERIES -> Icons.AutoMirrored.Filled.List
                                 MainMenuItem.REFRESH -> Icons.Filled.Refresh
                                 MainMenuItem.SETTINGS -> Icons.Filled.Settings
                             },
@@ -122,6 +126,7 @@ fun HomeScreen(
             modifier = Modifier
                 .width(CATEGORIES_PANEL_WIDTH)
                 .fillMaxHeight()
+                .focusGroup()
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 8.dp, vertical = 12.dp)
         ) {
@@ -136,111 +141,84 @@ fun HomeScreen(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
             )
 
-            Surface(
-                onClick = { viewModel.selectCategory("favorites_special") },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ClickableSurfaceDefaults.colors(
-                    containerColor = if (state.selectedCategoryId == "favorites_special") MaterialTheme.colorScheme.primaryContainer
-                                     else MaterialTheme.colorScheme.surface,
-                    focusedContainerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    focusedContentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(6.dp))
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.FavoriteBorder,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text("Favoritos", style = MaterialTheme.typography.bodyMedium)
+        Surface(
+            onClick = { viewModel.selectCategory("favorites_special") },
+            modifier = Modifier.fillMaxWidth().focusRequester(firstCategoryFocus),
+      colors = ClickableSurfaceDefaults.colors(
+        containerColor = if (state.selectedCategoryId == "favorites_special") MaterialTheme.colorScheme.primaryContainer
+        else MaterialTheme.colorScheme.surface,
+        focusedContainerColor = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+        pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+        pressedContentColor = MaterialTheme.colorScheme.onPrimary
+      ),
+      shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(6.dp))
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Icon(
+          imageVector = Icons.Outlined.FavoriteBorder,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                "Favoritos",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
                 }
             }
             Spacer(Modifier.height(2.dp))
             Surface(
                 onClick = { viewModel.selectCategory("recents_special") },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ClickableSurfaceDefaults.colors(
-                    containerColor = if (state.selectedCategoryId == "recents_special") MaterialTheme.colorScheme.primaryContainer
-                                     else MaterialTheme.colorScheme.surface,
-                    focusedContainerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    focusedContentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(6.dp))
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
+    colors = ClickableSurfaceDefaults.colors(
+      containerColor = if (state.selectedCategoryId == "recents_special") MaterialTheme.colorScheme.primaryContainer
+      else MaterialTheme.colorScheme.surface,
+      focusedContainerColor = MaterialTheme.colorScheme.primary,
+      contentColor = MaterialTheme.colorScheme.onSurface,
+      focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+      pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+      pressedContentColor = MaterialTheme.colorScheme.onPrimary
+    ),
+    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(6.dp))
+  ) {
+    Row(
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+      verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.History,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text("Recentes", style = MaterialTheme.typography.bodyMedium)
+            Icon(
+                imageVector = Icons.Outlined.History,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                "Recentes",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
                 }
             }
             Spacer(Modifier.height(4.dp))
             Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.surfaceVariant))
             Spacer(Modifier.height(4.dp))
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp)
-                    .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(horizontal = 8.dp)
-            ) {
-                BasicTextField(
-                    value = state.categorySearch,
-                    onValueChange = { viewModel.onCategorySearchChange(it) },
-                    modifier = Modifier.fillMaxSize(),
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    keyboardOptions = KeyboardOptions(
-                        imeAction = ImeAction.Search
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onSearch = { localFocusManager.clearFocus() }
-                    ),
-                    decorationBox = { innerTextField ->
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            if (state.categorySearch.isEmpty()) {
-                                Text(
-                                    text = "Buscar categoria...",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                )
-                            }
-                            innerTextField()
-                        }
-                    }
-                )
-                Icon(
-                    imageVector = Icons.Outlined.Search,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+        TvSearchField(
+            value = state.categorySearch,
+            onValueChange = { viewModel.onCategorySearchChange(it) },
+            placeholder = "Buscar categoria..."
+        )
 
             if (state.isLoadingCategories && state.categories.isEmpty()) {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -254,7 +232,11 @@ fun HomeScreen(
                         strokeWidth = 2.dp
                     )
                 }
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                LazyColumn(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            contentPadding = PaddingValues(vertical = 4.dp)
+        ) {
                     items(state.categories.filter { it.name.contains(state.categorySearch, ignoreCase = true) }) { category ->
                         CategoryItem(
                             category = category,
@@ -274,6 +256,7 @@ fun HomeScreen(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
+                .focusGroup()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
@@ -297,57 +280,14 @@ fun HomeScreen(
                              color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                else -> {
-                    Column {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 8.dp)
-                                .height(40.dp)
-                                .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.surface)
-                                .padding(horizontal = 8.dp)
-                        ) {
-                            BasicTextField(
-                                value = state.streamSearch,
-                                onValueChange = { viewModel.onStreamSearchChange(it) },
-                                modifier = Modifier.fillMaxSize(),
-                                singleLine = true,
-                                textStyle = MaterialTheme.typography.bodyMedium.copy(
-                                    color = MaterialTheme.colorScheme.onSurface
-                                ),
-                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                                keyboardOptions = KeyboardOptions(
-                                    imeAction = ImeAction.Search
-                                ),
-                                keyboardActions = KeyboardActions(
-                                    onSearch = { localFocusManager.clearFocus() }
-                                ),
-                                decorationBox = { innerTextField ->
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.CenterStart
-                                    ) {
-                                        if (state.streamSearch.isEmpty()) {
-                                            Text(
-                                                text = "Buscar stream...",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                            )
-                                        }
-                                        innerTextField()
-                                    }
-                                }
-                            )
-                            Icon(
-                                imageVector = Icons.Outlined.Search,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .align(Alignment.CenterEnd)
-                                    .size(16.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+        else -> {
+            Column(Modifier.focusGroup()) {
+                TvSearchField(
+                    value = state.streamSearch,
+                    onValueChange = { viewModel.onStreamSearchChange(it) },
+                    placeholder = "Buscar stream...",
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
                         if (state.selectedContentType == ContentType.LIVE || state.selectedCategoryId == "favorites_special" || state.selectedCategoryId == "recents_special") {
 LiveStreamGrid(
                                 streams = state.streams.filter { it.name.contains(state.streamSearch, ignoreCase = true) },
@@ -383,18 +323,20 @@ private fun CategoryItem(
     Surface(
         onClick = onSelect,
         modifier = Modifier.fillMaxWidth(),
-        colors = ClickableSurfaceDefaults.colors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                             else MaterialTheme.colorScheme.surface,
-            focusedContainerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            focusedContentColor = MaterialTheme.colorScheme.onPrimary
-        ),
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(6.dp))
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+    colors = ClickableSurfaceDefaults.colors(
+      containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+      else MaterialTheme.colorScheme.surface,
+      focusedContainerColor = MaterialTheme.colorScheme.primary,
+      contentColor = MaterialTheme.colorScheme.onSurface,
+      focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+      pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+      pressedContentColor = MaterialTheme.colorScheme.onPrimary
+    ),
+    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(6.dp))
+  ) {
+    Row(
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -432,18 +374,28 @@ private fun LiveStreamGrid(
                         .weight(1f)
                         .fillMaxHeight()
                 ) {
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val isFocused by interactionSource.collectIsFocusedAsState()
                     Surface(
                         onClick = { onStreamSelected(stream) },
+                        interactionSource = interactionSource,
                         modifier = Modifier
                             .fillMaxSize()
-                            .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small),
-                        colors = ClickableSurfaceDefaults.colors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            focusedContainerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                            focusedContentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        shape = ClickableSurfaceDefaults.shape(MaterialTheme.shapes.small)
+                            .clip(RoundedCornerShape(8.dp))
+                            .border(
+                                width = if (isFocused) 2.dp else 1.dp,
+                                color = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(8.dp)
+                            ),
+      colors = ClickableSurfaceDefaults.colors(
+        containerColor = MaterialTheme.colorScheme.surface,
+        focusedContainerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        focusedContentColor = MaterialTheme.colorScheme.onSurface,
+        pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+        pressedContentColor = MaterialTheme.colorScheme.onPrimary
+      ),
+                        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
                     ) {
                         Column(
                             modifier = Modifier
@@ -502,72 +454,87 @@ private fun LiveStreamGrid(
                 }
                 Spacer(Modifier.width(4.dp))
         if (stream.type == ContentType.SERIES && stream.lastEpisodeUrl != null && onPlayEpisodeUrl != null) {
-            Surface(
-                onClick = { onPlayEpisodeUrl(stream.lastEpisodeUrl, stream.lastEpisodeTitle ?: stream.name, -1L) },
-                        modifier = Modifier
-                            .width(44.dp)
-                            .fillMaxHeight(),
-                        colors = ClickableSurfaceDefaults.colors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            focusedContainerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Filled.PlayArrow,
-                                contentDescription = "Reproduzir",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
-                            )
+        Surface(
+            onClick = { onPlayEpisodeUrl(stream.lastEpisodeUrl, stream.lastEpisodeTitle ?: stream.name, -1L) },
+            modifier = Modifier
+                .width(44.dp)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(8.dp)),
+            colors = ClickableSurfaceDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                focusedContainerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.primary,
+                focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                pressedContentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+        ) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = "Reproduzir",
+                    modifier = Modifier.size(24.dp)
+                )
                         }
                     }
                     Spacer(Modifier.width(2.dp))
                 }
                 if (stream.type == ContentType.VOD && stream.progress > 0f) {
-                    Surface(
-                        onClick = { onStreamSelected(stream) },
-                        modifier = Modifier
-                            .width(44.dp)
-                            .fillMaxHeight(),
-                        colors = ClickableSurfaceDefaults.colors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            focusedContainerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Filled.PlayArrow,
-                                contentDescription = "Continuar",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
-                            )
+        Surface(
+            onClick = { onStreamSelected(stream) },
+            modifier = Modifier
+                .width(44.dp)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(8.dp)),
+            colors = ClickableSurfaceDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                focusedContainerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.primary,
+                focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                pressedContentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+        ) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = "Continuar",
+                    modifier = Modifier.size(24.dp)
+                )
                         }
                     }
                     Spacer(Modifier.width(2.dp))
                 }
                 val isFav by isFavorite(stream.id).collectAsStateWithLifecycle(initialValue = false)
-                Surface(
-                    onClick = { onToggleFavorite(stream) },
-                    modifier = Modifier
-                        .width(52.dp)
-                        .fillMaxHeight(),
-                    colors = ClickableSurfaceDefaults.colors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        focusedContainerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = if (isFav) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Favoritar",
-                            tint = if (isFav) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
+        Surface(
+            onClick = { onToggleFavorite(stream) },
+            modifier = Modifier
+                .width(52.dp)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(8.dp)),
+            colors = ClickableSurfaceDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                focusedContainerColor = MaterialTheme.colorScheme.primary,
+                contentColor = if (isFav) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                pressedContentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+        ) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = if (isFav) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    contentDescription = "Favoritar",
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
+        }
     }
+}
 }
 
 @Composable
@@ -581,17 +548,32 @@ private fun VodStreamGrid(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(streams, key = { it.id }) { stream ->
-            Surface(
-                onClick = { onStreamSelected(stream) },
-                modifier = Modifier.aspectRatio(0.7f),
-                colors = ClickableSurfaceDefaults.colors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    focusedContainerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    focusedContentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+            val interactionSource = remember { MutableInteractionSource() }
+            val isFocused by interactionSource.collectIsFocusedAsState()
+            Box(
+                modifier = Modifier
+                    .padding(4.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .border(
+                        width = if (isFocused) 2.dp else 0.dp,
+                        color = if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        shape = RoundedCornerShape(8.dp)
+                    )
             ) {
+                Surface(
+                    onClick = { onStreamSelected(stream) },
+                    interactionSource = interactionSource,
+                    modifier = Modifier.aspectRatio(0.7f),
+      colors = ClickableSurfaceDefaults.colors(
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        focusedContentColor = MaterialTheme.colorScheme.onSurface,
+        pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+        pressedContentColor = MaterialTheme.colorScheme.onPrimary
+      ),
+                    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+                ) {
             Column {
                 stream.posterUrl?.let { url ->
                     Box(
@@ -613,13 +595,13 @@ private fun VodStreamGrid(
                                     .align(Alignment.Center)
                                     .size(48.dp)
                                     .clip(RoundedCornerShape(24.dp))
-                                    .background(Color.Black.copy(alpha = 0.6f)),
+                                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.6f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.PlayArrow,
                                     contentDescription = "Continuar",
-                                    tint = Color.White,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(32.dp)
                                 )
                             }
@@ -648,10 +630,11 @@ private fun VodStreamGrid(
                         style = MaterialTheme.typography.labelMedium,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(8.dp)
-                    )
-                }
-            }
+        modifier = Modifier.padding(8.dp)
+        )
         }
-    }
+        }
+        }
+        }
+        }
 }

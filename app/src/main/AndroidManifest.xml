@@ -22,13 +22,13 @@
         android:theme="@style/Theme.IPTVPlayer"
         android:networkSecurityConfig="@xml/network_security_config">
 
-        <activity
-            android:name=".MainActivity"
-            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize"
-            android:exported="true"
-            android:launchMode="singleTask"
-            android:screenOrientation="landscape"
-            android:theme="@style/Theme.IPTVPlayer">
+    <activity
+      android:name=".MainActivity"
+      android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize"
+      android:exported="true"
+      android:launchMode="singleTask"
+      android:screenOrientation="landscape"
+      android:theme="@style/Theme.IPTV.Splash">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

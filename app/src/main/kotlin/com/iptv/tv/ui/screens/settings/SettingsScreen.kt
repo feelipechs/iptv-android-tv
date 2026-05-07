@@ -4,7 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LightMode
@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -40,18 +41,22 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                onClick = onBack,
-                modifier = Modifier.size(48.dp),
-                colors = ClickableSurfaceDefaults.colors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    focusedContainerColor = MaterialTheme.colorScheme.primary
-                ),
+    Surface(
+        onClick = onBack,
+        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)),
+        colors = ClickableSurfaceDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            focusedContainerColor = MaterialTheme.colorScheme.primary,
+            focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+            pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+            pressedContentColor = MaterialTheme.colorScheme.onPrimary
+        ),
                 shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
             ) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector = Icons.Filled.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Voltar",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
@@ -95,26 +100,56 @@ fun SettingsScreen(
             credentials?.let { cred ->
                 ProviderInfo(credentials = cred)
                 Spacer(Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Surface(
+                    onClick = { onNavigateToEdit() },
+                    modifier = Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(8.dp)),
+                    colors = ClickableSurfaceDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.primary,
+                        focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                        pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        pressedContentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
                 ) {
-                    Button(
-                        onClick = { onNavigateToEdit() },
-                        modifier = Modifier.weight(1f)
+                    Row(
+                        Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
                     ) {
                         Icon(Icons.Filled.Edit, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Editar")
                     }
-                    Button(
-                        onClick = { onNavigateToLogin() },
-                        modifier = Modifier.weight(1f)
+                }
+                Surface(
+                    onClick = { onNavigateToLogin() },
+                    modifier = Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(8.dp)),
+                    colors = ClickableSurfaceDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.primary,
+                        focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                        pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        pressedContentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+                ) {
+                    Row(
+                        Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
                     ) {
                         Icon(Icons.Filled.SwapHoriz, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Trocar provedor")
                     }
+                }
                 }
             } ?: run {
                 Text(
@@ -123,14 +158,33 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(12.dp))
-                Button(
+                Surface(
                     onClick = onNavigateToLogin,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(8.dp)),
+                    colors = ClickableSurfaceDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        focusedContainerColor = MaterialTheme.colorScheme.primary,
+                        focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                        pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        pressedContentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
                 ) {
-                    Text("Configurar provedor")
-                }
-            }
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Configurar provedor")
+                    }
         }
+    }
+}
+}
+}
+
+private fun String.maskUsername(): String {
+    return when {
+        length <= 2 -> "*".repeat(length)
+        length <= 4 -> first() + "*".repeat(length - 2) + last()
+        else -> take(2) + "*".repeat(length - 4) + takeLast(2)
     }
 }
 
@@ -165,11 +219,16 @@ private fun ThemeButton(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(56.dp),
+        modifier = modifier.height(56.dp).clip(RoundedCornerShape(8.dp)),
         colors = ClickableSurfaceDefaults.colors(
             containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                             else MaterialTheme.colorScheme.surfaceVariant,
-            focusedContainerColor = MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+            focusedContainerColor = MaterialTheme.colorScheme.primary,
+            focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+            pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+            pressedContentColor = MaterialTheme.colorScheme.onPrimary
         ),
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
     ) {
@@ -207,10 +266,10 @@ private fun ProviderInfo(credentials: Credentials) {
             ProviderType.XTREAM -> credentials.server
             ProviderType.M3U_LIST -> credentials.m3uSource ?: "Não definido"
         }
-        val displayUser = when (credentials.providerType) {
-            ProviderType.XTREAM -> credentials.username.take(3) + "***" + credentials.username.takeLast(2)
-            ProviderType.M3U_LIST -> "Lista M3U"
-        }
+    val displayUser = when (credentials.providerType) {
+        ProviderType.XTREAM -> credentials.username.maskUsername()
+        ProviderType.M3U_LIST -> "Lista M3U"
+    }
 
         Text(
             text = when (credentials.providerType) {
