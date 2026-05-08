@@ -44,6 +44,11 @@ class ContentRepositoryImpl @Inject constructor(
             entities.map { it.toDomain() }
         }
 
+    override fun getStreamCountsByType(type: ContentType): Flow<Map<String, Int>> =
+        streamDao.getStreamCountsByType(type).map { list ->
+            list.associate { it.categoryId to it.count }
+        }
+
     override suspend fun refreshCategories(type: ContentType) {
         val creds = credentialsRepository.getCredentials().first() ?: return
 

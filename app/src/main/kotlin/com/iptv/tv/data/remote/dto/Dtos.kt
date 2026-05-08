@@ -79,12 +79,12 @@ data class VodInfo(
     @SerializedName("movie_image") val movieImage: String?,
     @SerializedName("description") val description: String?,
     @SerializedName("plot") val plot: String?,
-    @SerializedName("cast") val cast: String?,
+    @SerializedName("actors") val actors: String?,
     @SerializedName("director") val director: String?,
     @SerializedName("genre") val genre: String?,
     @SerializedName("release_date") val releaseDate: String?,
     @SerializedName("releasedate") val releaseDate2: String?,
-    @SerializedName("rating") val rating: String?,
+    @SerializedName("rating") val rating: Double?,
     @SerializedName("duration") val duration: String?
 )
 
@@ -103,7 +103,7 @@ data class SeriesInfo(
     @SerializedName("name") val name: String?,
     @SerializedName("cover") val cover: String?,
     @SerializedName("plot") val plot: String?,
-    @SerializedName("cast") val cast: String?,
+    @SerializedName("cast") val actors: String?,
     @SerializedName("director") val director: String?,
     @SerializedName("genre") val genre: String?,
     @SerializedName("releaseDate") val releaseDate: String?,
@@ -112,8 +112,8 @@ data class SeriesInfo(
 )
 
 data class Episode(
-    @SerializedName("id") val id: Int,
-    @SerializedName("episode_num") val episodeNum: Int,
+    @SerializedName("id") val id: String,
+    @SerializedName("episode_num") val episodeNum: String,
     @SerializedName("title") val title: String?,
     @SerializedName("season") val season: Int,
     @SerializedName("container_extension") val containerExtension: String?,
@@ -124,5 +124,5 @@ data class Episode(
 data class EpisodeInfo(
     @SerializedName("releasedate") val releaseDate: String?,
     @SerializedName("plot") val plot: String?,
-    @SerializedName("duration") val duration: String?
+    @SerializedName("duration") val duration: Int?
 )

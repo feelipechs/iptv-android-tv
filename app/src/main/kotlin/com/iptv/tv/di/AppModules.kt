@@ -35,8 +35,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -154,32 +153,50 @@ object ContentRepositoryModule {
     fun provideContentRepository(
         xtreamRepo: ContentRepositoryImpl,
         m3uRepo: M3uContentRepository,
-        credentialsRepository: CredentialsRepository
-    ): ContentRepository = ContentRepositoryFactory(xtreamRepo, m3uRepo, credentialsRepository)
+        credentialsRepository: CredentialsRepository,
+        @ApplicationScope applicationScope: CoroutineScope
+    ): ContentRepository = DelegatingContentRepository(xtreamRepo, m3uRepo, credentialsRepository, applicationScope)
 }
 
-class ContentRepositoryFactory(
+private class DelegatingContentRepository(
     private val xtreamRepo: ContentRepositoryImpl,
     private val m3uRepo: M3uContentRepository,
-    private val credentialsRepository: CredentialsRepository
+    credentialsRepository: CredentialsRepository,
+    applicationScope: CoroutineScope
 ) : ContentRepository {
 
+    @Volatile
+    private var delegate: ContentRepository = xtreamRepo
+
+    init {
+        applicationScope.launch {
+            credentialsRepository.getCredentials().collect { credentials ->
+                delegate = when (credentials?.providerType) {
+                    ProviderType.M3U_LIST -> m3uRepo
+                    else -> xtreamRepo
+                }
+            }
+        }
+    }
+
     override fun getCategories(type: com.iptv.tv.domain.model.ContentType) =
-        getRepo().getCategories(type)
+        delegate.getCategories(type)
 
     override fun getStreams(categoryId: String, type: com.iptv.tv.domain.model.ContentType) =
-        getRepo().getStreams(categoryId, type)
+        delegate.getStreams(categoryId, type)
+
+    override fun getStreamCountsByType(type: com.iptv.tv.domain.model.ContentType) =
+        delegate.getStreamCountsByType(type)
 
     override suspend fun refreshCategories(type: com.iptv.tv.domain.model.ContentType) =
-        getRepo().refreshCategories(type)
+        delegate.refreshCategories(type)
 
     override suspend fun refreshStreams(categoryId: String, type: com.iptv.tv.domain.model.ContentType) =
-        getRepo().refreshStreams(categoryId, type)
+        delegate.refreshStreams(categoryId, type)
 
     override suspend fun validateCredentials(credentials: com.iptv.tv.domain.model.Credentials): Result<Unit> {
         val type = credentials.providerType
-        android.util.Log.d("ContentRepoFactory", "validateCredentials: using providerType=$type")
-
+        android.util.Log.d("DelegatingContentRepo", "validateCredentials: using providerType=$type")
         return when (type) {
             ProviderType.M3U_LIST -> m3uRepo.validateCredentials(credentials)
             ProviderType.XTREAM -> xtreamRepo.validateCredentials(credentials)
@@ -188,14 +205,4 @@ class ContentRepositoryFactory(
 
     override suspend fun getSeriesInfo(seriesId: Int): SeriesInfoResponse =
         xtreamRepo.getSeriesInfo(seriesId)
-
-    private fun getRepo(): ContentRepository {
-        val credentials = runBlocking { credentialsRepository.getCredentials().first() }
-        val providerType = credentials?.providerType ?: ProviderType.XTREAM
-
-        return when (providerType) {
-            ProviderType.M3U_LIST -> m3uRepo
-            ProviderType.XTREAM -> xtreamRepo
-        }
-    }
 }

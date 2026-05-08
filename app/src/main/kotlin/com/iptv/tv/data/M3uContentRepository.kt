@@ -47,6 +47,11 @@ class M3uContentRepository @Inject constructor(
             entities.map { it.toDomain() }
         }
 
+    override fun getStreamCountsByType(type: ContentType): Flow<Map<String, Int>> =
+        streamDao.getStreamCountsByType(type).map { list ->
+            list.associate { it.categoryId to it.count }
+        }
+
     private suspend fun getOrFetchParseResult(source: String): M3UParser.ParseResult? {
         if (cachedParseResult != null && cachedM3uSource == source) {
             Log.d(TAG, "getOrFetchParseResult: returning cached result for '$source'")

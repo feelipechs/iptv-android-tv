@@ -2,8 +2,6 @@ package com.iptv.tv.ui.screens.detail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,25 +52,22 @@ import com.iptv.tv.domain.model.Stream
 fun DetailScreen(
     stream: Stream,
     onPlay: (Stream, Long) -> Unit,
-    onBack: () -> Unit,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
-    val vodInfo by viewModel.vodInfo.collectAsStateWithLifecycle()
-    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(stream.id) {
         viewModel.loadVodInfo(stream.id)
+        viewModel.observeFavorite(stream.id)
     }
 
-    val isFavorite by viewModel.isFavorite(stream.id).collectAsStateWithLifecycle(initialValue = false)
-
-    val savedProgress by viewModel.savedProgress.collectAsStateWithLifecycle()
-
-val playButtonFocusRequester = remember { FocusRequester() }
-LaunchedEffect(Unit) {
-    delay(100)
-    playButtonFocusRequester.requestFocus()
-}
+    val playButtonFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(uiState.isLoading) {
+        if (!uiState.isLoading) {
+            kotlinx.coroutines.delay(100)
+            try { playButtonFocusRequester.requestFocus() } catch (_: Exception) {}
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -90,34 +85,6 @@ LaunchedEffect(Unit) {
                     .padding(start = 8.dp, top = 16.dp, end = 16.dp, bottom = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-        val backInteractionSource = remember { MutableInteractionSource() }
-        val backFocused by backInteractionSource.collectIsFocusedAsState()
-        Surface(
-          onClick = onBack,
-          modifier = Modifier
-            .size(48.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .then(
-              if (backFocused) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
-              else Modifier
-            ),
-        colors = ClickableSurfaceDefaults.colors(
-          containerColor = MaterialTheme.colorScheme.surface,
-          contentColor = MaterialTheme.colorScheme.onSurface,
-          focusedContainerColor = MaterialTheme.colorScheme.surface,
-          focusedContentColor = MaterialTheme.colorScheme.onSurface,
-          pressedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-          pressedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-        ),
-          shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-        ) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
                 Text(
                     text = "Detalhes",
                     style = MaterialTheme.typography.titleLarge,
@@ -127,7 +94,7 @@ LaunchedEffect(Unit) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            if (isLoading) {
+            if (uiState.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -135,12 +102,12 @@ LaunchedEffect(Unit) {
                     CircularProgressIndicator()
                 }
             } else {
-                val year = vodInfo?.info?.releaseDate ?: vodInfo?.info?.releaseDate2
-                val genre = vodInfo?.info?.genre
-                val plot = vodInfo?.info?.plot ?: vodInfo?.info?.description
-                val rating = vodInfo?.info?.rating
-                val cast = vodInfo?.info?.cast
-                val director = vodInfo?.info?.director
+            val year = uiState.vodInfo?.info?.releaseDate ?: uiState.vodInfo?.info?.releaseDate2
+            val genre = uiState.vodInfo?.info?.genre
+            val plot = uiState.vodInfo?.info?.plot ?: uiState.vodInfo?.info?.description
+            val rating = uiState.vodInfo?.info?.rating
+            val actors = uiState.vodInfo?.info?.actors
+            val director = uiState.vodInfo?.info?.director
 
                 Row(
                     modifier = Modifier
@@ -187,7 +154,7 @@ LaunchedEffect(Unit) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-            val progress = savedProgress
+                val progress = uiState.savedProgress
                 val showContinue = progress != null && progress > 0.05f
 
                 if (showContinue) {
@@ -306,38 +273,38 @@ LaunchedEffect(Unit) {
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
-                                        imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                                        imageVector = if (uiState.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                                         contentDescription = "Favoritar",
-                                        tint = if (isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                                        tint = if (uiState.isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = if (isFavorite) "Favoritado" else "Favoritar",
+                                        text = if (uiState.isFavorite) "Favoritado" else "Favoritar",
                                         style = MaterialTheme.typography.labelLarge,
-                                        color = if (isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = if (uiState.isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
                         }
 
-                        if (!rating.isNullOrBlank()) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Star,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = rating,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+            if (rating != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = String.format("%.1f", rating),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
                         if (!year.isNullOrBlank()) {
                             Row(
@@ -377,24 +344,24 @@ LaunchedEffect(Unit) {
                             }
                         }
 
-                        if (!cast.isNullOrBlank()) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Person,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = cast,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+            if (!actors.isNullOrBlank()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = actors,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
                         if (!director.isNullOrBlank()) {
                             Row(

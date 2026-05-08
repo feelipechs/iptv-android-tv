@@ -209,8 +209,7 @@ fun IPTVNavHost() {
                     val encodedUrl = java.net.URLEncoder.encode(playStream.streamUrl, "UTF-8")
                     val encodedName = java.net.URLEncoder.encode(playStream.name, "UTF-8")
                     navController.navigate(Screen.Player.route(encodedId, encodedUrl, encodedName, startPosition))
-                },
-                onBack = { navController.popBackStack() }
+                }
             )
         }
 
@@ -244,17 +243,16 @@ fun IPTVNavHost() {
 
             SeriesDetailScreen(
                 stream = stream,
-            onPlayEpisode = { episodeUrl, episodeName, startPosition ->
-                navController.navigate(
-                    Screen.Player.route(
-                        java.net.URLEncoder.encode(episodeUrl, "UTF-8"),
-                        java.net.URLEncoder.encode(episodeUrl, "UTF-8"),
-                        java.net.URLEncoder.encode(episodeName, "UTF-8"),
-                        startPosition
+                onPlayEpisode = { episodeUrl, episodeName, startPosition ->
+                    navController.navigate(
+                        Screen.Player.route(
+                            java.net.URLEncoder.encode(episodeUrl, "UTF-8"),
+                            java.net.URLEncoder.encode(episodeUrl, "UTF-8"),
+                            java.net.URLEncoder.encode(episodeName, "UTF-8"),
+                            startPosition
+                        )
                     )
-                )
-            },
-                onBack = { navController.popBackStack() }
+                }
             )
         }
 
@@ -277,8 +275,7 @@ fun IPTVNavHost() {
                 },
                 onNavigateToEdit = {
                     navController.navigate(Screen.EditCredentials.route)
-                },
-                onBack = { navController.popBackStack() }
+                }
             )
         }
 
@@ -289,7 +286,7 @@ fun IPTVNavHost() {
             credentials?.let { cred ->
                 EditCredentialsScreen(
                     credentials = cred,
-                    onBack = { navController.popBackStack() },
+                    onNavigateBack = { navController.popBackStack() },
                     onSave = { updatedCreds ->
                         viewModel.saveCredentials(updatedCreds)
                     }

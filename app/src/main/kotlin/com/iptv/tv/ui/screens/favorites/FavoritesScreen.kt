@@ -171,47 +171,48 @@ fun FavoritesScreen(
 
 @Composable
 private fun FavoriteItem(
-  favorite: FavoriteEntry,
-  onRemove: () -> Unit,
-  onClick: () -> Unit
+    favorite: FavoriteEntry,
+    onRemove: () -> Unit,
+    onClick: () -> Unit
 ) {
-  Row(
-    modifier = Modifier.fillMaxWidth().height(80.dp),
-    horizontalArrangement = Arrangement.spacedBy(0.dp)
-  ) {
-    Column(
-      modifier = Modifier
-        .weight(1f)
-        .fillMaxHeight()
+    Row(
+        modifier = Modifier.fillMaxWidth().height(80.dp),
+        horizontalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-      val interactionSource = remember { MutableInteractionSource() }
-      val isFocused by interactionSource.collectIsFocusedAsState()
-      Surface(
-        onClick = onClick,
-        interactionSource = interactionSource,
-        modifier = Modifier
-          .fillMaxSize()
-          .clip(RoundedCornerShape(8.dp))
-          .border(
-            width = if (isFocused) 2.dp else 0.dp,
-            color = if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent,
-            shape = RoundedCornerShape(8.dp)
-          ),
-        colors = ClickableSurfaceDefaults.colors(
-          containerColor = MaterialTheme.colorScheme.surface,
-          focusedContainerColor = MaterialTheme.colorScheme.surface,
-          contentColor = MaterialTheme.colorScheme.onSurface,
-          focusedContentColor = MaterialTheme.colorScheme.onSurface,
-          pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-          pressedContentColor = MaterialTheme.colorScheme.onPrimary
-        ),
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-      ) {
-        Row(
-          modifier = Modifier.fillMaxSize().padding(12.dp),
-          verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
         ) {
-          if (favorite.posterUrl != null) {
+            val interactionSource = remember { MutableInteractionSource() }
+            val isFocused by interactionSource.collectIsFocusedAsState()
+            Surface(
+                onClick = onClick,
+                interactionSource = interactionSource,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(8.dp))
+                    .border(
+                        width = if (isFocused) 2.dp else 0.dp,
+                        color = if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        shape = RoundedCornerShape(8.dp)
+                    ),
+                scale = ClickableSurfaceScale.None,
+                colors = ClickableSurfaceDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    focusedContentColor = MaterialTheme.colorScheme.onSurface,
+                    pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                    pressedContentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (favorite.posterUrl != null) {
             AsyncImage(
               model = favorite.posterUrl,
               contentDescription = null,
@@ -271,47 +272,48 @@ private fun FavoriteItem(
 
 @Composable
 private fun HistoryItem(
-  entry: WatchHistoryEntry,
-  onDelete: () -> Unit,
-  onClick: () -> Unit
+    entry: WatchHistoryEntry,
+    onDelete: () -> Unit,
+    onClick: () -> Unit
 ) {
-  Row(
-    modifier = Modifier.fillMaxWidth().height(80.dp),
-    horizontalArrangement = Arrangement.spacedBy(0.dp)
-  ) {
-    Column(
-      modifier = Modifier
-        .weight(1f)
-        .fillMaxHeight()
+    Row(
+        modifier = Modifier.fillMaxWidth().height(80.dp),
+        horizontalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-      val interactionSource = remember { MutableInteractionSource() }
-      val isFocused by interactionSource.collectIsFocusedAsState()
-      Surface(
-        onClick = onClick,
-        interactionSource = interactionSource,
-        modifier = Modifier
-          .fillMaxSize()
-          .clip(RoundedCornerShape(8.dp))
-          .border(
-            width = if (isFocused) 2.dp else 0.dp,
-            color = if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent,
-            shape = RoundedCornerShape(8.dp)
-          ),
-        colors = ClickableSurfaceDefaults.colors(
-          containerColor = MaterialTheme.colorScheme.surface,
-          focusedContainerColor = MaterialTheme.colorScheme.surface,
-          contentColor = MaterialTheme.colorScheme.onSurface,
-          focusedContentColor = MaterialTheme.colorScheme.onSurface,
-          pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-          pressedContentColor = MaterialTheme.colorScheme.onPrimary
-        ),
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-      ) {
-        Row(
-          modifier = Modifier.fillMaxSize().padding(12.dp),
-          verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
         ) {
-          if (entry.posterUrl != null) {
+            val interactionSource = remember { MutableInteractionSource() }
+            val isFocused by interactionSource.collectIsFocusedAsState()
+            Surface(
+                onClick = onClick,
+                interactionSource = interactionSource,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(8.dp))
+                    .border(
+                        width = if (isFocused) 2.dp else 0.dp,
+                        color = if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        shape = RoundedCornerShape(8.dp)
+                    ),
+                scale = ClickableSurfaceScale.None,
+                colors = ClickableSurfaceDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    focusedContentColor = MaterialTheme.colorScheme.onSurface,
+                    pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                    pressedContentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (entry.posterUrl != null) {
             AsyncImage(
               model = entry.posterUrl,
               contentDescription = null,

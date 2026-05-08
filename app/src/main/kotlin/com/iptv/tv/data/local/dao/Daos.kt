@@ -8,6 +8,11 @@ import com.iptv.tv.data.local.entity.WatchHistoryEntity
 import com.iptv.tv.domain.model.ContentType
 import kotlinx.coroutines.flow.Flow
 
+data class CategoryCount(
+    val categoryId: String,
+    val count: Int
+)
+
 @Dao
 interface CategoryDao {
 
@@ -32,6 +37,9 @@ interface StreamDao {
 
     @Query("SELECT * FROM streams WHERE categoryId = :categoryId AND type = :type ORDER BY name ASC")
     fun getStreamsByCategory(categoryId: String, type: ContentType): Flow<List<StreamEntity>>
+
+    @Query("SELECT categoryId, COUNT(*) as count FROM streams WHERE type = :type GROUP BY categoryId")
+    fun getStreamCountsByType(type: ContentType): Flow<List<CategoryCount>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(streams: List<StreamEntity>)

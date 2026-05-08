@@ -6,8 +6,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,7 +26,7 @@ import com.iptv.tv.domain.model.ProviderType
 @Composable
 fun EditCredentialsScreen(
     credentials: Credentials,
-    onBack: () -> Unit,
+    onNavigateBack: () -> Unit,
     onSave: (Credentials) -> Unit
 ) {
     var server by remember { mutableStateOf(credentials.server) }
@@ -48,40 +46,12 @@ fun EditCredentialsScreen(
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-      Surface(
-        onClick = onBack,
-        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)),
-        colors = ClickableSurfaceDefaults.colors(
-          containerColor = MaterialTheme.colorScheme.surface,
-          focusedContainerColor = MaterialTheme.colorScheme.surface,
-          contentColor = MaterialTheme.colorScheme.onSurface,
-          focusedContentColor = MaterialTheme.colorScheme.onSurface,
-          pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-          pressedContentColor = MaterialTheme.colorScheme.onPrimary
-        ),
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-      ) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Voltar",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-            Spacer(Modifier.width(16.dp))
-            Text(
-                text = "Editar Provedor",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
+        Text(
+            text = "Editar Provedor",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
 
         Spacer(Modifier.height(16.dp))
 
@@ -139,7 +109,7 @@ fun EditCredentialsScreen(
             ProviderType.M3U_LIST -> credentials.copy(m3uSource = m3uSource)
           }
           onSave(updated)
-          onBack()
+          onNavigateBack()
         },
         modifier = Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(8.dp)),
         colors = ClickableSurfaceDefaults.colors(

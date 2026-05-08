@@ -15,6 +15,9 @@ class GetCategoriesUseCase @Inject constructor(
 ) {
   operator fun invoke(type: ContentType): Flow<List<Category>> =
     repository.getCategories(type)
+
+  fun getStreamCountsByType(type: ContentType): Flow<Map<String, Int>> =
+    repository.getStreamCountsByType(type)
 }
 
 class GetStreamsUseCase @Inject constructor(

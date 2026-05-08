@@ -7,6 +7,7 @@ import com.iptv.tv.data.remote.dto.Episode
 import com.iptv.tv.data.remote.dto.SeriesInfo
 import com.iptv.tv.domain.model.Stream
 import com.iptv.tv.domain.repository.ContentRepository
+import com.iptv.tv.domain.repository.CredentialsRepository
 import com.iptv.tv.domain.repository.FavoritesRepository
 import com.iptv.tv.domain.repository.WatchHistoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,19 +22,22 @@ data class SeriesDetailUiState(
     val seriesInfo: SeriesInfo? = null,
     val episodes: Map<String, List<Episode>>? = null,
     val selectedSeason: String = "",
+    val episodesForSelectedSeason: List<Episode> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null,
     val isFavorite: Boolean = false,
     val lastEpisodeUrl: String? = null,
     val lastEpisodeNum: Int? = null,
     val lastSeason: String? = null,
-    val episodeProgress: Map<String, Float> = emptyMap()
+    val episodeProgress: Map<String, Float> = emptyMap(),
+    val episodeStreamUrls: Map<String, String> = emptyMap()
 )
 
 @HiltViewModel
 class SeriesDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val contentRepository: ContentRepository,
+    private val credentialsRepository: CredentialsRepository,
     private val favoritesRepository: FavoritesRepository,
     private val watchHistoryRepository: WatchHistoryRepository
 ) : ViewModel() {
@@ -56,6 +60,8 @@ class SeriesDetailViewModel @Inject constructor(
             loadHistory()
             loadSeriesInfo()
             loadEpisodeProgress()
+        }
+        viewModelScope.launch {
             observeFavorite()
         }
     }
@@ -77,7 +83,8 @@ class SeriesDetailViewModel @Inject constructor(
         val episodes = _uiState.value.episodes?.values?.flatten() ?: emptyList()
         val progressMap = mutableMapOf<String, Float>()
         episodes.forEach { episode ->
-            val url = episode.directSource ?: return@forEach
+            val url = getEpisodeStreamUrl(episode)
+            if (url.isBlank()) return@forEach
             val epEntry = watchHistoryRepository.getHistoryEntry(url)
             if (epEntry != null && epEntry.progress > 0f) {
                 progressMap[url] = epEntry.progress
@@ -93,18 +100,31 @@ class SeriesDetailViewModel @Inject constructor(
             val response = contentRepository.getSeriesInfo(seriesId)
 
             val historySeason = _uiState.value.lastSeason
-            val firstSeason = response.episodes?.keys?.minOrNull() ?: ""
+            val firstSeason = response.episodes?.keys
+            ?.sortedBy { it.toIntOrNull() ?: Int.MAX_VALUE }
+            ?.firstOrNull() ?: ""
             val selectedSeason = if (!historySeason.isNullOrBlank() &&
                 response.episodes?.containsKey(historySeason) == true
             ) historySeason
             else firstSeason
 
-            _uiState.value = _uiState.value.copy(
-                seriesInfo = response.info,
-                episodes = response.episodes,
-                selectedSeason = selectedSeason,
-                isLoading = false
-            )
+        val urlMap = mutableMapOf<String, String>()
+        response.episodes?.values?.flatten()?.forEach { ep ->
+            urlMap[ep.id] = getEpisodeStreamUrl(ep)
+        }
+
+        _uiState.value = _uiState.value.copy(
+            seriesInfo = response.info,
+            episodes = response.episodes,
+            selectedSeason = selectedSeason,
+            episodesForSelectedSeason = response.episodes?.get(selectedSeason) ?: emptyList(),
+            episodeStreamUrls = urlMap,
+            isLoading = false
+        )
+        android.util.Log.d("SeriesDetail", "Temporada selecionada: $selectedSeason")
+        android.util.Log.d("SeriesDetail", "Episódios nessa temporada: ${response.episodes?.get(selectedSeason)?.size}")
+        android.util.Log.d("SeriesDetail", "Todas as chaves: ${response.episodes?.keys}")
+        android.util.Log.d("SeriesDetail", "episodesForSelectedSeason size: ${(response.episodes?.get(selectedSeason) ?: emptyList()).size}")
         }.onFailure { e ->
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
@@ -129,13 +149,14 @@ class SeriesDetailViewModel @Inject constructor(
 
     fun addToHistory(s: Stream, episode: Episode, season: String) {
         viewModelScope.launch {
+            val epUrl = getEpisodeStreamUrl(episode)
             watchHistoryRepository.addToHistory(
                 stream = s,
                 progress = 0f,
-                episodeNum = episode.episodeNum,
+                episodeNum = episode.episodeNum.toIntOrNull(),
                 episodeTitle = episode.title,
                 season = season,
-                episodeUrl = episode.directSource
+                episodeUrl = epUrl
             )
             loadHistory()
             loadEpisodeProgress()
@@ -143,20 +164,22 @@ class SeriesDetailViewModel @Inject constructor(
     }
 
     fun selectSeason(season: String) {
-        _uiState.value = _uiState.value.copy(selectedSeason = season)
+        val eps = _uiState.value.episodes?.get(season) ?: emptyList()
+        _uiState.value = _uiState.value.copy(
+            selectedSeason = season,
+            episodesForSelectedSeason = eps
+        )
     }
 
-    fun getEpisodesForSelectedSeason(): List<Episode> {
-        val season = _uiState.value.selectedSeason
-        return _uiState.value.episodes?.get(season) ?: emptyList()
-    }
+suspend fun getResumeUrl(): String? {
+    val fromHistory = _uiState.value.lastEpisodeUrl
+    if (!fromHistory.isNullOrBlank()) return fromHistory
 
-    fun getResumeUrl(): String? {
-        val fromHistory = _uiState.value.lastEpisodeUrl
-        if (!fromHistory.isNullOrBlank()) return fromHistory
-
-        val firstSeason = _uiState.value.episodes?.keys?.minOrNull()
-        return _uiState.value.episodes?.get(firstSeason)?.firstOrNull()?.directSource
+    val firstSeason = _uiState.value.episodes?.keys
+        ?.sortedBy { it.toIntOrNull() ?: Int.MAX_VALUE }
+        ?.firstOrNull()
+        val firstEp = _uiState.value.episodes?.get(firstSeason)?.firstOrNull() ?: return null
+        return getEpisodeStreamUrl(firstEp)
     }
 
     fun getResumeEpisode(): Pair<Episode, String>? {
@@ -164,11 +187,19 @@ class SeriesDetailViewModel @Inject constructor(
         val lastEpNum = _uiState.value.lastEpisodeNum
         if (lastSeason != null && lastEpNum != null) {
             val ep = _uiState.value.episodes?.get(lastSeason)
-                ?.firstOrNull { it.episodeNum == lastEpNum }
+            ?.firstOrNull { it.episodeNum.toIntOrNull() == lastEpNum }
             if (ep != null) return Pair(ep, lastSeason)
         }
-        val firstSeason = _uiState.value.episodes?.keys?.minOrNull() ?: return null
+        val firstSeason = _uiState.value.episodes?.keys
+        ?.sortedBy { it.toIntOrNull() ?: Int.MAX_VALUE }
+        ?.firstOrNull() ?: return null
         val firstEp = _uiState.value.episodes?.get(firstSeason)?.firstOrNull() ?: return null
         return Pair(firstEp, firstSeason)
+    }
+
+    suspend fun getEpisodeStreamUrl(episode: Episode): String {
+        if (!episode.directSource.isNullOrBlank()) return episode.directSource
+        val creds = credentialsRepository.getCredentials().first() ?: return ""
+        return creds.seriesUrl(episode.id, episode.containerExtension)
     }
 }

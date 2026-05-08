@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
@@ -33,7 +32,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,17 +49,18 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import androidx.tv.material3.ClickableSurfaceDefaults
+import androidx.tv.material3.ClickableSurfaceScale
 import coil.compose.AsyncImage
 import com.iptv.tv.data.remote.dto.Episode
 import com.iptv.tv.data.remote.dto.SeriesInfo
 import com.iptv.tv.domain.model.ContentType
 import com.iptv.tv.domain.model.Stream
+import androidx.compose.ui.focus.onFocusChanged
 
 @Composable
 fun SeriesDetailScreen(
     stream: Stream,
     onPlayEpisode: (String, String, Long) -> Unit,
-    onBack: () -> Unit,
     viewModel: SeriesDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -67,13 +69,21 @@ fun SeriesDetailScreen(
         viewModel.setStream(stream)
     }
 
-  val playButtonFocusRequester = remember { FocusRequester() }
-  LaunchedEffect(Unit) {
-    kotlinx.coroutines.delay(100)
-    playButtonFocusRequester.requestFocus()
-  }
+    val playButtonFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(uiState.isLoading) {
+        if (!uiState.isLoading) {
+            kotlinx.coroutines.delay(100)
+            try {
+                playButtonFocusRequester.requestFocus()
+            } catch (_: Exception) {
+            }
+        }
+    }
 
-    val resumeUrl = viewModel.getResumeUrl()
+    var resumeUrl by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(uiState.episodes) {
+        resumeUrl = viewModel.getResumeUrl()
+    }
     val isResume = uiState.lastEpisodeUrl != null
 
     Box(
@@ -89,6 +99,10 @@ fun SeriesDetailScreen(
                 CircularProgressIndicator()
             }
         } else {
+            android.util.Log.d(
+                "SeriesUI",
+                "episodesForSelectedSeason: ${uiState.episodesForSelectedSeason.size}, selectedSeason: ${uiState.selectedSeason}, seriesInfo null: ${uiState.seriesInfo == null}"
+            )
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(vertical = 16.dp)
@@ -100,34 +114,6 @@ fun SeriesDetailScreen(
                             .padding(start = 8.dp, end = 16.dp, bottom = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-        val backInteractionSource = remember { MutableInteractionSource() }
-        val backFocused by backInteractionSource.collectIsFocusedAsState()
-        Surface(
-          onClick = onBack,
-          modifier = Modifier
-            .size(48.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .then(
-              if (backFocused) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
-              else Modifier
-            ),
-          colors = ClickableSurfaceDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            focusedContainerColor = MaterialTheme.colorScheme.surface,
-            focusedContentColor = MaterialTheme.colorScheme.onSurface,
-            pressedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            pressedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-          ),
-          shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-        ) {
-          Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Icon(
-              Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar",
-              tint = MaterialTheme.colorScheme.onSurface
-            )
-          }
-        }
                         Text(
                             text = "Série",
                             style = MaterialTheme.typography.titleLarge,
@@ -137,10 +123,10 @@ fun SeriesDetailScreen(
                     }
                 }
 
-                uiState.seriesInfo?.let { info ->
+                if (uiState.seriesInfo != null) {
                     item {
                         SeriesHeader(
-                            seriesInfo = info,
+                            seriesInfo = uiState.seriesInfo!!,
                             stream = stream,
                             isFavorite = uiState.isFavorite,
                             onToggleFavorite = { viewModel.toggleFavorite(stream) },
@@ -153,7 +139,7 @@ fun SeriesDetailScreen(
                                     if (stream.name.isNotBlank() && stream.id.isNotBlank()) {
                                         viewModel.addToHistory(stream, episode, season)
                                     }
-                                    episode.directSource?.let { url -> onPlayEpisode(url, episode.title ?: stream.name, -1L) }
+                                    resumeUrl?.let { url -> onPlayEpisode(url, episode.title ?: stream.name, -1L) }
                                 }
                             },
                             uiState = uiState
@@ -166,10 +152,11 @@ fun SeriesDetailScreen(
 
                     item {
                         SeasonSelector(
-                            seasons = uiState.episodes?.keys?.toList() ?: emptyList(),
+                            seasons = uiState.episodes?.keys
+                                ?.sortedBy { it.toIntOrNull() ?: Int.MAX_VALUE }
+                                ?: emptyList(),
                             selectedSeason = uiState.selectedSeason,
-                            onSeasonSelected = { viewModel.selectSeason(it) },
-                            focusRequester = playButtonFocusRequester
+                            onSeasonSelected = { viewModel.selectSeason(it) }
                         )
                     }
 
@@ -186,22 +173,24 @@ fun SeriesDetailScreen(
                         )
                     }
 
-            itemsIndexed(viewModel.getEpisodesForSelectedSeason()) { index, episode ->
-                val epUrl = episode.directSource ?: ""
-                val epProgress = uiState.episodeProgress[epUrl] ?: 0f
-                EpisodeItem(
-                    episode = episode,
-                    episodeProgress = epProgress,
-                    onClick = {
-                        if (stream.name.isNotBlank() && stream.id.isNotBlank()) {
-                            viewModel.addToHistory(stream, episode, uiState.selectedSeason)
-                        }
-                        val streamUrl = episode.directSource
-                            ?: "${episode.id}.${episode.containerExtension}"
-                        onPlayEpisode(streamUrl, episode.title ?: "Episódio ${episode.episodeNum}", if (epProgress > 0.05f) -1L else 0L)
-                    },
-                    modifier = Modifier
-                )
+                    itemsIndexed(uiState.episodesForSelectedSeason) { index, episode ->
+                        val epUrl = uiState.episodeStreamUrls[episode.id] ?: ""
+                        val epProgress = uiState.episodeProgress[epUrl] ?: 0f
+                        EpisodeItem(
+                            episode = episode,
+                            episodeProgress = epProgress,
+                            onClick = {
+                                if (stream.name.isNotBlank() && stream.id.isNotBlank()) {
+                                    viewModel.addToHistory(stream, episode, uiState.selectedSeason)
+                                }
+                                onPlayEpisode(
+                                    epUrl,
+                                    episode.title ?: "Episódio ${episode.episodeNum}",
+                                    if (epProgress > 0.05f) -1L else 0L
+                                )
+                            },
+                            modifier = Modifier
+                        )
                     }
                 }
             }
@@ -261,27 +250,27 @@ private fun SeriesHeader(
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-        Row(
-            Modifier.focusGroup(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            Row(
+                Modifier.focusGroup(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 if (resumeUrl != null) {
-      Surface(
-        onClick = onPlayClick,
-        modifier = Modifier
-          .focusRequester(playButtonFocusRequester)
-          .clip(RoundedCornerShape(8.dp)),
-        colors = ClickableSurfaceDefaults.colors(
-          containerColor = MaterialTheme.colorScheme.primary,
-          focusedContainerColor = MaterialTheme.colorScheme.primary,
-          contentColor = MaterialTheme.colorScheme.onPrimary,
-          focusedContentColor = MaterialTheme.colorScheme.onPrimary,
-          pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-          pressedContentColor = MaterialTheme.colorScheme.onPrimary
-        ),
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-      ) {
+                    Surface(
+                        onClick = onPlayClick,
+                        modifier = Modifier
+                            .focusRequester(playButtonFocusRequester)
+                            .clip(RoundedCornerShape(8.dp)),
+                        colors = ClickableSurfaceDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            focusedContainerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                            pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                            pressedContentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+                    ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -311,20 +300,20 @@ private fun SeriesHeader(
                     }
                 }
 
-      Surface(
-        onClick = onToggleFavorite,
-        modifier = Modifier.clip(RoundedCornerShape(8.dp)),
-        colors = ClickableSurfaceDefaults.colors(
-          containerColor = MaterialTheme.colorScheme.surfaceVariant,
-          focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-          contentColor = if (isFavorite) MaterialTheme.colorScheme.error
-          else MaterialTheme.colorScheme.onSurfaceVariant,
-          focusedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-          pressedContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
-          pressedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-        ),
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-      ) {
+                Surface(
+                    onClick = onToggleFavorite,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)),
+                    colors = ClickableSurfaceDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = if (isFavorite) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        focusedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        pressedContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+                        pressedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
+                    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+                ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -345,7 +334,8 @@ private fun SeriesHeader(
                 }
             }
 
-            if (!seriesInfo.rating.isNullOrBlank()) {
+            val ratingValue = seriesInfo.rating?.toDoubleOrNull()
+            if (ratingValue != null && ratingValue > 0) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -357,7 +347,7 @@ private fun SeriesHeader(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = seriesInfo.rating,
+                        text = String.format("%.1f", ratingValue),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -402,7 +392,7 @@ private fun SeriesHeader(
                 }
             }
 
-            if (!seriesInfo.cast.isNullOrBlank()) {
+            if (!seriesInfo.actors.isNullOrBlank()) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -414,7 +404,7 @@ private fun SeriesHeader(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = seriesInfo.cast,
+                        text = seriesInfo.actors,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -456,8 +446,7 @@ private fun SeriesHeader(
 private fun SeasonSelector(
     seasons: List<String>,
     selectedSeason: String,
-    onSeasonSelected: (String) -> Unit,
-    focusRequester: FocusRequester
+    onSeasonSelected: (String) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -471,27 +460,26 @@ private fun SeasonSelector(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(vertical = 4.dp),
-        modifier = Modifier.focusGroup()
-    ) {
-            itemsIndexed(seasons) { index, season ->
-                val isSelected = season == selectedSeason
-        Surface(
-          onClick = { onSeasonSelected(season) },
-          colors = ClickableSurfaceDefaults.colors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.surfaceVariant,
-            focusedContainerColor = MaterialTheme.colorScheme.primary,
-            contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary
-            else MaterialTheme.colorScheme.onSurfaceVariant,
-            focusedContentColor = MaterialTheme.colorScheme.onPrimary,
-            pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-            pressedContentColor = MaterialTheme.colorScheme.onPrimary
-          ),
-          shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.focusGroup()
         ) {
+            seasons.forEachIndexed { index, season ->
+                val isSelected = season == selectedSeason
+                Surface(
+                    onClick = { onSeasonSelected(season) },
+                    colors = ClickableSurfaceDefaults.colors(
+                        containerColor = if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surfaceVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                        pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        pressedContentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+                ) {
                     Text(
                         text = season,
                         style = MaterialTheme.typography.labelLarge,
@@ -505,39 +493,41 @@ private fun SeasonSelector(
 
 @Composable
 private fun EpisodeItem(
-  episode: Episode,
-  episodeProgress: Float = 0f,
-  onClick: () -> Unit,
-  modifier: Modifier = Modifier
+    episode: Episode,
+    episodeProgress: Float = 0f,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-  val interactionSource = remember { MutableInteractionSource() }
-  val isFocused by interactionSource.collectIsFocusedAsState()
-  Surface(
-    onClick = onClick,
-    modifier = modifier
-      .fillMaxWidth()
-      .padding(horizontal = 32.dp)
-      .clip(RoundedCornerShape(8.dp))
-      .then(
-        if (isFocused) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
-        else Modifier
-      ),
-    colors = ClickableSurfaceDefaults.colors(
-      containerColor = MaterialTheme.colorScheme.surface,
-      focusedContainerColor = MaterialTheme.colorScheme.surface,
-      contentColor = MaterialTheme.colorScheme.onSurface,
-      focusedContentColor = MaterialTheme.colorScheme.onSurface,
-      pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-      pressedContentColor = MaterialTheme.colorScheme.onPrimary
-    ),
-    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-  ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+
+    Surface(
+        onClick = onClick,
+        interactionSource = interactionSource,
+        scale = ClickableSurfaceScale.None,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 32.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .then(
+                if (isFocused) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+                else Modifier
+            ),
+        colors = ClickableSurfaceDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            focusedContentColor = MaterialTheme.colorScheme.onSurface,
+            pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+            pressedContentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -551,7 +541,7 @@ private fun EpisodeItem(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "${episode.episodeNum}",
+                        text = episode.episodeNum,
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -564,11 +554,13 @@ private fun EpisodeItem(
                         maxLines = 1
                     )
                     episode.info?.duration?.let { duration ->
-                        Text(
-                            text = duration,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        if (duration > 0) {
+                            Text(
+                                text = "${duration}min",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
@@ -578,6 +570,7 @@ private fun EpisodeItem(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
             if (episodeProgress > 0.05f) {
                 Box(
                     modifier = Modifier
@@ -588,7 +581,7 @@ private fun EpisodeItem(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth(episodeProgress)
-                            .fillMaxSize()
+                            .height(2.dp)
                             .background(MaterialTheme.colorScheme.primary)
                     )
                 }

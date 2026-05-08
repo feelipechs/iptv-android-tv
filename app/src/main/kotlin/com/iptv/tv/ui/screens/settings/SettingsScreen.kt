@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LightMode
@@ -13,9 +12,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
 import androidx.tv.material3.*
 import com.iptv.tv.domain.model.Credentials
 import com.iptv.tv.domain.model.ProviderType
@@ -25,11 +27,16 @@ import com.iptv.tv.ui.theme.AppTheme
 fun SettingsScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToEdit: () -> Unit,
-    onBack: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val credentials by viewModel.credentials.collectAsStateWithLifecycle()
     val currentTheme by viewModel.currentTheme.collectAsStateWithLifecycle()
+
+    val firstItemFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        delay(100)
+        firstItemFocusRequester.requestFocus()
+    }
 
     Column(
         modifier = Modifier
@@ -37,38 +44,12 @@ fun SettingsScreen(
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-    Surface(
-        onClick = onBack,
-        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)),
-        colors = ClickableSurfaceDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            focusedContainerColor = MaterialTheme.colorScheme.primary,
-            focusedContentColor = MaterialTheme.colorScheme.onPrimary,
-            pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-            pressedContentColor = MaterialTheme.colorScheme.onPrimary
-        ),
-                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-            ) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Voltar",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-            Spacer(Modifier.width(16.dp))
-            Text(
-                text = "Configurações",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
+        Text(
+            text = "Configurações",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
 
         Spacer(Modifier.height(8.dp))
 
@@ -82,7 +63,7 @@ fun SettingsScreen(
                     icon = Icons.Filled.LightMode,
                     isSelected = currentTheme == AppTheme.LIGHT,
                     onClick = { viewModel.setTheme(AppTheme.LIGHT) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).focusRequester(firstItemFocusRequester)
                 )
                 ThemeButton(
                     label = "ESCURO",

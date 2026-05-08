@@ -17,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -27,6 +26,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.*
 
@@ -43,11 +43,12 @@ fun TvSearchField(
     val isFocused by interactionSource.collectIsFocusedAsState()
 
     var isActive by remember { mutableStateOf(false) }
-    val activeFocusRequester = remember { FocusRequester() }
+    val innerFocusRequester = remember { FocusRequester() }
+    val outerFocusRequester = remember { FocusRequester() }
 
-    if (isActive) {
-        LaunchedEffect(Unit) {
-            activeFocusRequester.requestFocus()
+    LaunchedEffect(isActive) {
+        if (isActive) {
+            innerFocusRequester.requestFocus()
             keyboardController?.show()
         }
     }
@@ -55,33 +56,30 @@ fun TvSearchField(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(40.dp)
-            .then(
-                if (!isActive) {
-                    Modifier
-                        .focusable(interactionSource = interactionSource)
-                        .onKeyEvent { keyEvent ->
-                            if (keyEvent.type == KeyEventType.KeyDown) {
-                                when (keyEvent.key) {
-                                    Key.DirectionCenter, Key.Enter -> {
-                                        isActive = true
-                                        true
-                                    }
-                                    else -> false
-                                }
-                            } else false
+            .heightIn(min = 48.dp)
+            .focusRequester(outerFocusRequester)
+            .focusable(interactionSource = interactionSource)
+            .onKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown) {
+                    when (keyEvent.key) {
+                        Key.DirectionCenter, Key.Enter -> {
+                            if (!isActive) {
+                                isActive = true
+                            }
+                            true
                         }
-                } else {
-                    Modifier
-                        .onKeyEvent { keyEvent ->
-                            if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Back) {
+                        Key.Back -> {
+                            if (isActive) {
                                 isActive = false
                                 keyboardController?.hide()
-                                true
-                            } else false
+                                outerFocusRequester.requestFocus()
+                            }
+                            true
                         }
-                }
-            )
+                        else -> false
+                    }
+                } else false
+            }
             .border(
                 width = if (isFocused || isActive) 2.dp else 1.dp,
                 color = if (isFocused || isActive) MaterialTheme.colorScheme.primary
@@ -89,65 +87,67 @@ fun TvSearchField(
                 shape = RoundedCornerShape(8.dp)
             )
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
-            .padding(horizontal = 8.dp)
+            .padding(horizontal = 16.dp),
+        contentAlignment = Alignment.CenterStart
     ) {
-        if (isActive) {
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .focusRequester(activeFocusRequester),
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurface
-                ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(
-                    onSearch = { focusManager.clearFocus() }
-                ),
-                decorationBox = { innerTextField ->
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        if (value.isEmpty()) {
-                            Text(
-                                text = placeholder,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            )
-                        }
-                        innerTextField()
-                    }
-                }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Search,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
-        } else {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                if (value.isEmpty()) {
-                    Text(
-                        text = placeholder,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    )
-                } else {
-                    Text(
-                        text = value,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1
-                    )
-                }
-                Icon(
-                    imageVector = Icons.Outlined.Search,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+            Spacer(modifier = Modifier.width(12.dp))
+            if (isActive) {
+                BasicTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    modifier = Modifier
+                        .weight(1f)
+                        .focusRequester(innerFocusRequester),
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            isActive = false
+                            keyboardController?.hide()
+                            outerFocusRequester.requestFocus()
+                        }
+                    ),
+                    decorationBox = { innerTextField ->
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            if (value.isEmpty()) {
+                                Text(
+                                    text = placeholder,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+            } else {
+                Text(
+                    text = if (value.isEmpty()) placeholder else value,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (value.isEmpty())
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                    else
+                        MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
