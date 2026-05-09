@@ -69,22 +69,21 @@ fun SeriesDetailScreen(
         viewModel.setStream(stream)
     }
 
-    val playButtonFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(uiState.isLoading) {
-        if (!uiState.isLoading) {
-            kotlinx.coroutines.delay(100)
-            try {
-                playButtonFocusRequester.requestFocus()
-            } catch (_: Exception) {
-            }
-        }
-    }
+val playButtonFocusRequester = remember { FocusRequester() }
+val favButtonFocusRequester = remember { FocusRequester() }
 
-    var resumeUrl by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(uiState.episodes) {
+var resumeUrl by remember { mutableStateOf<String?>(null) }
+LaunchedEffect(uiState.isLoading, uiState.episodes) {
+    if (!uiState.isLoading) {
         resumeUrl = viewModel.getResumeUrl()
+        kotlinx.coroutines.delay(300)
+        try {
+            if (resumeUrl != null) playButtonFocusRequester.requestFocus()
+            else favButtonFocusRequester.requestFocus()
+        } catch (_: Exception) {}
     }
-    val isResume = uiState.lastEpisodeUrl != null
+}
+val isResume = uiState.lastEpisodeUrl != null
 
     Box(
         modifier = Modifier
@@ -125,12 +124,13 @@ fun SeriesDetailScreen(
 
                 if (uiState.seriesInfo != null) {
                     item {
-                        SeriesHeader(
-                            seriesInfo = uiState.seriesInfo!!,
-                            stream = stream,
-                            isFavorite = uiState.isFavorite,
-                            onToggleFavorite = { viewModel.toggleFavorite(stream) },
-                            playButtonFocusRequester = playButtonFocusRequester,
+                SeriesHeader(
+                    seriesInfo = uiState.seriesInfo!!,
+                    stream = stream,
+                    isFavorite = uiState.isFavorite,
+                    onToggleFavorite = { viewModel.toggleFavorite(stream) },
+                    playButtonFocusRequester = playButtonFocusRequester,
+                    favButtonFocusRequester = favButtonFocusRequester,
                             resumeUrl = resumeUrl,
                             isResume = isResume,
                             onPlayClick = {
@@ -205,6 +205,7 @@ private fun SeriesHeader(
     isFavorite: Boolean,
     onToggleFavorite: () -> Unit,
     playButtonFocusRequester: FocusRequester,
+    favButtonFocusRequester: FocusRequester,
     resumeUrl: String?,
     isResume: Boolean,
     onPlayClick: () -> Unit,
@@ -300,9 +301,11 @@ private fun SeriesHeader(
                     }
                 }
 
-                Surface(
-                    onClick = onToggleFavorite,
-                    modifier = Modifier.clip(RoundedCornerShape(8.dp)),
+        Surface(
+            onClick = onToggleFavorite,
+            modifier = Modifier
+                .focusRequester(favButtonFocusRequester)
+                .clip(RoundedCornerShape(8.dp)),
                     colors = ClickableSurfaceDefaults.colors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                         focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -461,8 +464,7 @@ private fun SeasonSelector(
         )
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.focusGroup()
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             seasons.forEachIndexed { index, season ->
                 val isSelected = season == selectedSeason

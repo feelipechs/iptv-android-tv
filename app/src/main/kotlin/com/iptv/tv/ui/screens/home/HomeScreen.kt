@@ -357,8 +357,23 @@ fun HomeScreen(
 			.fillMaxHeight()
 			.focusGroup()
 			.background(MaterialTheme.colorScheme.background)
-			.padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
+            if (state.selectedCategoryId != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                ) {
+                    TvSearchField(
+                        value = state.streamSearch,
+                        onValueChange = { viewModel.onStreamSearchChange(it) },
+                        placeholder = "Buscar...",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+            }
             when {
                 state.selectedCategoryId == null -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -379,11 +394,13 @@ fun HomeScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                else -> {
-                    Column {
-                        if (state.selectedContentType == ContentType.LIVE || state.selectedCategoryId == "favorites_special" || state.selectedCategoryId == "recents_special") {
-                            LiveStreamGrid(
-                                streams = state.streams,
+            else -> {
+                val filteredStreams = if (state.streamSearch.isBlank()) state.streams
+                    else state.streams.filter { it.name.contains(state.streamSearch, ignoreCase = true) }
+                Column {
+                    if (state.selectedContentType == ContentType.LIVE || state.selectedCategoryId == "favorites_special" || state.selectedCategoryId == "recents_special") {
+                        LiveStreamGrid(
+                            streams = filteredStreams,
                                 onStreamSelected = {
                                     viewModel.recordToHistory(it)
                                     onStreamSelected(it)
@@ -397,8 +414,8 @@ fun HomeScreen(
                                 firstItemFocus = streamFirstFocus
                             )
                         } else {
-                            VodStreamGrid(
-                                streams = state.streams,
+                    VodStreamGrid(
+                            streams = filteredStreams,
                                 onStreamSelected = {
                                     viewModel.recordToHistory(it)
                                     onStreamSelected(it)

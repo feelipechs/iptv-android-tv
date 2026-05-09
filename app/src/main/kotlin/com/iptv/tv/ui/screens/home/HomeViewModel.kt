@@ -44,6 +44,7 @@ data class HomeUiState(
     val favoriteCount: Int = 0,
     val historyCount: Int = 0,
     val categorySearch: String = "",
+    val streamSearch: String = "",
     val categoryCounts: Map<String, Int> = emptyMap()
 )
 
@@ -70,6 +71,7 @@ class HomeViewModel @Inject constructor(
     private val _favoriteCount = MutableStateFlow(0)
     private val _historyCount = MutableStateFlow(0)
     private val _categorySearch = MutableStateFlow("")
+    private val _streamSearch = MutableStateFlow("")
 
     val pinnedCategories: StateFlow<Set<String>> = _pinnedCategories.asStateFlow()
 
@@ -127,7 +129,7 @@ RECENTS_CATEGORY_ID -> {
             getCategoriesUseCase.getStreamCountsByType(type)
         }
 
-    val uiState: StateFlow<HomeUiState> = combine(
+val uiState: StateFlow<HomeUiState> = combine(
         _selectedContentType,
         _selectedCategoryId,
         _activePanel,
@@ -138,8 +140,9 @@ RECENTS_CATEGORY_ID -> {
         _error,
         _favoriteCount,
         _historyCount,
-    _categorySearch,
-    categoriesFlow,
+        _categorySearch,
+        _streamSearch,
+        categoriesFlow,
         streamsFlow,
         categoryCountsFlow
     ) { values ->
@@ -153,13 +156,14 @@ RECENTS_CATEGORY_ID -> {
         val error = values[7] as String?
         val favCount = values[8] as Int
         val histCount = values[9] as Int
-    val categorySearch = values[10] as String
-    @Suppress("UNCHECKED_CAST")
-    val categories = values[11] as List<Category>
-    @Suppress("UNCHECKED_CAST")
-    val streams = values[12] as List<Stream>
-    @Suppress("UNCHECKED_CAST")
-    val categoryCounts = values[13] as Map<String, Int>
+        val categorySearch = values[10] as String
+        val streamSearch = values[11] as String
+        @Suppress("UNCHECKED_CAST")
+        val categories = values[12] as List<Category>
+        @Suppress("UNCHECKED_CAST")
+        val streams = values[13] as List<Stream>
+        @Suppress("UNCHECKED_CAST")
+        val categoryCounts = values[14] as Map<String, Int>
 
         val pinned_sorted = categories.sortedByDescending { cat -> pinned.contains(cat.id) }
 
@@ -175,8 +179,9 @@ RECENTS_CATEGORY_ID -> {
             activePanel = activePanel,
             favoriteCount = favCount,
             historyCount = histCount,
-        categorySearch = categorySearch,
-        categoryCounts = categoryCounts
+            categorySearch = categorySearch,
+            streamSearch = streamSearch,
+            categoryCounts = categoryCounts
         )
     }
         .stateIn(
@@ -225,6 +230,7 @@ RECENTS_CATEGORY_ID -> {
     }
 
     fun selectCategory(categoryId: String) {
+        _streamSearch.value = ""
         _selectedCategoryId.value = categoryId
         _activePanel.value = Panel.Content
         if (categoryId != FAVORITES_CATEGORY_ID && categoryId != RECENTS_CATEGORY_ID) {
@@ -234,6 +240,10 @@ RECENTS_CATEGORY_ID -> {
 
     fun onCategorySearchChange(query: String) {
         _categorySearch.value = query
+    }
+
+    fun onStreamSearchChange(query: String) {
+        _streamSearch.value = query
     }
 
     fun selectCategoryAndShowContent(categoryId: String) {
