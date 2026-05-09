@@ -3,33 +3,24 @@ package com.iptv.tv.ui.screens.login
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.*
 import com.iptv.tv.domain.model.ProviderType
+import com.iptv.tv.ui.components.TvTextField
 
 @Composable
 fun LoginScreen(
@@ -43,14 +34,12 @@ fun LoginScreen(
         if (state.isLoggedIn) onLoginSuccess()
     }
 
-    var serverFocused by remember { mutableStateOf(false) }
-    var userFocused by remember { mutableStateOf(false) }
-    var passFocused by remember { mutableStateOf(false) }
-    var m3uFocused by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val serverFocusRequester = remember { FocusRequester() }
 
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
-    ) { uri ->
+    ) { uri: Uri? ->
         uri?.let { viewModel.onM3uSourceChange(it.toString()) }
     }
 
@@ -124,10 +113,7 @@ fun LoginScreen(
                     shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
                 ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            "Xtream",
-                            textAlign = TextAlign.Center
-                        )
+                        Text("Xtream")
                     }
                 }
                 val isM3u = state.providerType == ProviderType.M3U_LIST
@@ -145,10 +131,7 @@ fun LoginScreen(
                     shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
                 ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            "M3U",
-                            textAlign = TextAlign.Center
-                        )
+                        Text("M3U")
                     }
                 }
             }
@@ -157,57 +140,59 @@ fun LoginScreen(
 
             when (state.providerType) {
                 ProviderType.XTREAM -> {
-                    StyledTextField(
+                    TvTextField(
                         value = state.server,
                         onValueChange = viewModel::onServerChange,
                         label = "Servidor (ex: http://host:porta)",
-                        isFocused = serverFocused,
-                        onFocusChange = { serverFocused = it },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Uri,
                             imeAction = ImeAction.Next
                         ),
-                        modifier = Modifier
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                        ),
+                        focusRequester = serverFocusRequester
                     )
 
-                    StyledTextField(
+                    TvTextField(
                         value = state.username,
                         onValueChange = viewModel::onUsernameChange,
                         label = "Usuário",
-                        isFocused = userFocused,
-                        onFocusChange = { userFocused = it },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        modifier = Modifier
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                        )
                     )
 
-                    StyledTextField(
+                    TvTextField(
                         value = state.password,
                         onValueChange = viewModel::onPasswordChange,
                         label = "Senha",
-                        isFocused = passFocused,
-                        onFocusChange = { passFocused = it },
-                        visualTransformation = PasswordVisualTransformation(),
+                        isPassword = true,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Done
                         ),
-                        modifier = Modifier
+                        keyboardActions = KeyboardActions(
+                            onDone = { focusManager.clearFocus() }
+                        )
                     )
                 }
 
                 ProviderType.M3U_LIST -> {
-                    StyledTextField(
+                    TvTextField(
                         value = state.m3uSource,
                         onValueChange = viewModel::onM3uSourceChange,
                         label = "URL da lista M3U",
                         placeholder = "https://exemplo.com/lista.m3u",
-                        isFocused = m3uFocused,
-                        onFocusChange = { m3uFocused = it },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Uri,
                             imeAction = ImeAction.Done
                         ),
-                        modifier = Modifier
+                        keyboardActions = KeyboardActions(
+                            onDone = { focusManager.clearFocus() }
+                        ),
+                        focusRequester = serverFocusRequester
                     )
 
                     Row(
@@ -218,7 +203,7 @@ fun LoginScreen(
                             text = "ou",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 8.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp)
                         )
                     }
 
@@ -237,8 +222,7 @@ fun LoginScreen(
                     ) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Text(
-                                text = if (state.m3uSource.isNotEmpty()) "Arquivo selecionado" else "Selecionar arquivo local",
-                                textAlign = TextAlign.Center
+                                text = if (state.m3uSource.isNotEmpty()) "Arquivo selecionado" else "Selecionar arquivo local"
                             )
                         }
                     }
@@ -268,92 +252,12 @@ fun LoginScreen(
             ) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     if (state.isLoading) {
-                        Text(
-                            "Carregando...",
-                            textAlign = TextAlign.Center
-                        )
+                        Text("Carregando...")
                     } else {
-                        Text(
-                            "Entrar",
-                            textAlign = TextAlign.Center
-                        )
+                        Text("Entrar")
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun StyledTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    isFocused: Boolean,
-    onFocusChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-    placeholder: String = "",
-    visualTransformation: VisualTransformation = VisualTransformation.None,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    keyboardActions: KeyboardActions = KeyboardActions.Default
-) {
-    val borderColor = if (isFocused) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    val focusRequester = remember { FocusRequester() }
-
-    Column(modifier = modifier) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .border(BorderStroke(1.dp, borderColor), RoundedCornerShape(8.dp))
-                .clickable { focusRequester.requestFocus() }
-                .padding(horizontal = 12.dp)
-        ) {
-            BasicTextField(
-                value = value,
-                onValueChange = {
-                    onValueChange(it)
-                    if (!isFocused) onFocusChange(true)
-                },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .focusRequester(focusRequester)
-                    .onFocusChanged { onFocusChange(it.isFocused) },
-                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onSurface
-                ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                visualTransformation = visualTransformation,
-                keyboardOptions = keyboardOptions,
-                keyboardActions = keyboardActions,
-                decorationBox = { innerTextField ->
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        if (value.isEmpty()) {
-                            Text(
-                                text = placeholder,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            )
-                        }
-                        innerTextField()
-                    }
-                }
-            )
         }
     }
 }

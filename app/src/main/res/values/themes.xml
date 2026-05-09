@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <!-- Tema base para Android TV — sem ActionBar, fundo escuro -->
-  <style name="Theme.IPTVPlayer" parent="@android:style/Theme.DeviceDefault.NoActionBar">
-    <item name="android:windowNoTitle">true</item>
-    <item name="android:windowFullscreen">true</item>
-    <item name="android:windowBackground">@android:color/black</item>
-  </style>
+    <style name="Theme.IPTVPlayer" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
 
-  <!-- Tema de splash — exibe ícone de play antes do Compose carregar -->
-  <style name="Theme.IPTV.Splash" parent="Theme.IPTVPlayer">
-    <item name="android:windowBackground">@drawable/splash_logo</item>
-  </style>
+    <style name="Theme.IPTV.Splash" parent="Theme.IPTVPlayer">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+    </style>
 </resources>

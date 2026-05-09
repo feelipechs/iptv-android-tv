@@ -83,11 +83,9 @@ class SeriesDetailViewModel @Inject constructor(
         val episodes = _uiState.value.episodes?.values?.flatten() ?: emptyList()
         val progressMap = mutableMapOf<String, Float>()
         episodes.forEach { episode ->
-            val url = getEpisodeStreamUrl(episode)
-            if (url.isBlank()) return@forEach
-            val epEntry = watchHistoryRepository.getHistoryEntry(url)
-            if (epEntry != null && epEntry.progress > 0f) {
-                progressMap[url] = epEntry.progress
+            val entry = watchHistoryRepository.getHistoryEntry(episode.id)
+            if (entry != null && entry.progress > 0f) {
+                progressMap[episode.id] = entry.progress
             }
         }
         _uiState.value = _uiState.value.copy(episodeProgress = progressMap)

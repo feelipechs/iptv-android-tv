@@ -13,9 +13,9 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-  override fun onCreate(savedInstanceState: Bundle?) {
-    setTheme(R.style.Theme_IPTVPlayer)
-    super.onCreate(savedInstanceState)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setTheme(R.style.Theme_IPTVPlayer)
         setContent {
             val viewModel: MainViewModel = hiltViewModel()
             val theme by viewModel.theme.collectAsState()

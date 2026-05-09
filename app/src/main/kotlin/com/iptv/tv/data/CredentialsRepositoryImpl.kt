@@ -56,6 +56,12 @@ class CredentialsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun clearCredentials() {
-        dataStore.edit { it.clear() }
+        dataStore.edit { prefs ->
+            prefs.remove(Keys.SERVER)
+            prefs.remove(Keys.USERNAME)
+            prefs.remove(Keys.PASSWORD)
+            prefs.remove(Keys.PROVIDER_TYPE)
+            prefs.remove(Keys.M3U_SOURCE)
+        }
     }
 }

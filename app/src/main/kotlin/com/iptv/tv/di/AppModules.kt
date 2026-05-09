@@ -171,10 +171,11 @@ private class DelegatingContentRepository(
     init {
         applicationScope.launch {
             credentialsRepository.getCredentials().collect { credentials ->
-                delegate = when (credentials?.providerType) {
+                val newDelegate = when (credentials?.providerType) {
                     ProviderType.M3U_LIST -> m3uRepo
                     else -> xtreamRepo
                 }
+                delegate = newDelegate
             }
         }
     }
@@ -196,7 +197,6 @@ private class DelegatingContentRepository(
 
     override suspend fun validateCredentials(credentials: com.iptv.tv.domain.model.Credentials): Result<Unit> {
         val type = credentials.providerType
-        android.util.Log.d("DelegatingContentRepo", "validateCredentials: using providerType=$type")
         return when (type) {
             ProviderType.M3U_LIST -> m3uRepo.validateCredentials(credentials)
             ProviderType.XTREAM -> xtreamRepo.validateCredentials(credentials)

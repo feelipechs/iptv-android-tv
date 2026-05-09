@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,7 +61,7 @@ import androidx.compose.ui.focus.onFocusChanged
 @Composable
 fun SeriesDetailScreen(
     stream: Stream,
-    onPlayEpisode: (String, String, Long) -> Unit,
+    onPlayEpisode: (String, String, String, Long) -> Unit,
     viewModel: SeriesDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -139,7 +140,7 @@ val isResume = uiState.lastEpisodeUrl != null
                                     if (stream.name.isNotBlank() && stream.id.isNotBlank()) {
                                         viewModel.addToHistory(stream, episode, season)
                                     }
-                                    resumeUrl?.let { url -> onPlayEpisode(url, episode.title ?: stream.name, -1L) }
+                                    resumeUrl?.let { url -> onPlayEpisode(episode.id, url, episode.title ?: stream.name, -1L) }
                                 }
                             },
                             uiState = uiState
@@ -174,8 +175,8 @@ val isResume = uiState.lastEpisodeUrl != null
                     }
 
                     itemsIndexed(uiState.episodesForSelectedSeason) { index, episode ->
-                        val epUrl = uiState.episodeStreamUrls[episode.id] ?: ""
-                        val epProgress = uiState.episodeProgress[epUrl] ?: 0f
+            val epUrl = uiState.episodeStreamUrls[episode.id] ?: ""
+            val epProgress = uiState.episodeProgress[episode.id] ?: 0f
                         EpisodeItem(
                             episode = episode,
                             episodeProgress = epProgress,
@@ -183,11 +184,12 @@ val isResume = uiState.lastEpisodeUrl != null
                                 if (stream.name.isNotBlank() && stream.id.isNotBlank()) {
                                     viewModel.addToHistory(stream, episode, uiState.selectedSeason)
                                 }
-                                onPlayEpisode(
-                                    epUrl,
-                                    episode.title ?: "Episódio ${episode.episodeNum}",
-                                    if (epProgress > 0.05f) -1L else 0L
-                                )
+                onPlayEpisode(
+                    episode.id,
+                    epUrl,
+                    episode.title ?: "Episódio ${episode.episodeNum}",
+                    if (epProgress > 0.05f) -1L else 0L
+                )
                             },
                             modifier = Modifier
                         )
@@ -395,24 +397,26 @@ private fun SeriesHeader(
                 }
             }
 
-            if (!seriesInfo.actors.isNullOrBlank()) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Person,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = seriesInfo.actors,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+if (!seriesInfo.actors.isNullOrBlank()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Person,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = seriesInfo.actors,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
+        }
 
             if (!seriesInfo.director.isNullOrBlank()) {
                 Row(
@@ -433,14 +437,16 @@ private fun SeriesHeader(
                 }
             }
 
-            if (!seriesInfo.plot.isNullOrBlank()) {
-                Text(
-                    text = seriesInfo.plot,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
+if (!seriesInfo.plot.isNullOrBlank()) {
+            Text(
+                text = seriesInfo.plot,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                modifier = Modifier.padding(top = 8.dp),
+                maxLines = 4,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
         }
     }
 }

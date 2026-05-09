@@ -52,6 +52,7 @@ fun PlayerScreen(
 
     val rootFocusRequester = remember { FocusRequester() }
     val controlsFocusRequester = remember { FocusRequester() }
+    val errorFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
         rootFocusRequester.requestFocus()
@@ -70,6 +71,13 @@ fun PlayerScreen(
         }
     }
 
+    LaunchedEffect(state.error) {
+        if (state.error != null) {
+            delay(100)
+            try { errorFocusRequester.requestFocus() } catch (_: Exception) {}
+        }
+    }
+
     LaunchedEffect(streamUrl) {
         viewModel.play(streamUrl, startPosition)
     }
@@ -84,8 +92,9 @@ fun PlayerScreen(
                 if (keyEvent.type != KeyEventType.KeyDown) return@onKeyEvent false
 
                 when {
-                    keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter -> {
-                        if (!showControls) {
+keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter -> {
+                    if (state.error != null) return@onKeyEvent false
+                    if (!showControls) {
                             showControls = true
                             autoHideKey = System.currentTimeMillis()
                         } else {
@@ -112,48 +121,37 @@ fun PlayerScreen(
                 }
             }
     ) {
-        AndroidView(
-            factory = { context ->
-                PlayerView(context).apply {
-                    player = viewModel.player
-                    useController = false
-                    setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS)
-                }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
+AndroidView(
+        factory = { context ->
+            PlayerView(context).apply {
+                player = viewModel.player
+                useController = false
+                setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS)
+            }
+        },
+        modifier = Modifier.fillMaxSize()
+    )
 
-        if (streamName.isNotBlank()) {
-            Text(
-                text = streamName,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.background.copy(alpha = 0.5f),
-                        shape = RoundedCornerShape(4.dp)
-                    )
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-        color = MaterialTheme.colorScheme.onBackground,
-        style = MaterialTheme.typography.titleMedium
-            )
-        }
-
-        if (state.error != null) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+    if (state.error != null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.focusGroup()
             ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          Text(
-            text = "Erro: ${state.error}",
-            color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.bodyLarge
-          )
-          Spacer(Modifier.height(16.dp))
-          Surface(
-            onClick = { viewModel.play(streamUrl) },
-            modifier = Modifier.clip(RoundedCornerShape(8.dp)),
+                Text(
+                    text = "Erro: ${state.error}",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Spacer(Modifier.height(16.dp))
+                Surface(
+                    onClick = { viewModel.play(streamUrl) },
+                    modifier = Modifier
+                        .focusRequester(errorFocusRequester)
+                        .clip(RoundedCornerShape(8.dp)),
             colors = ClickableSurfaceDefaults.colors(
               containerColor = MaterialTheme.colorScheme.primary,
               focusedContainerColor = MaterialTheme.colorScheme.primary,
@@ -202,8 +200,23 @@ fun PlayerScreen(
             }
         }
 
-        if (showControls) {
-            PlayerControlsOverlay(
+if (showControls) {
+        if (streamName.isNotBlank()) {
+            Text(
+                text = streamName,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.background.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+        PlayerControlsOverlay(
                 isPlaying = state.isPlaying,
                 currentPosition = state.currentPosition,
                 duration = state.duration,

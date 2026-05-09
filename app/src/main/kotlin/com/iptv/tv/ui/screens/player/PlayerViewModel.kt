@@ -75,14 +75,14 @@ class PlayerViewModel @Inject constructor(
             val pos = currentPosition
             val dur = duration
             val progress = if (dur > 0L) pos.toFloat() / dur.toFloat() else 0f
-val stream = Stream(
-            id = streamId,
-            name = streamName,
-            categoryId = "",
-            type = streamType,
-            streamUrl = streamUrl,
-            posterUrl = null
-        )
+            val stream = Stream(
+                id = streamId,
+                name = streamName,
+                categoryId = "",
+                type = streamType,
+                streamUrl = streamUrl,
+                posterUrl = null
+            )
             applicationScope.launch {
                 watchHistoryRepository.addToHistory(stream, progress)
             }

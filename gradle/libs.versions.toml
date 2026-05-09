@@ -10,6 +10,7 @@ retrofit = "2.11.0"
 okhttp = "4.12.0"
 datastore = "1.1.1"
 coroutines = "1.8.1"
+core-splashscreen = "1.0.1"
 lifecycle = "2.8.2"
 navigation = "2.8.0-beta04"
 coil = "2.6.0"
@@ -63,6 +64,9 @@ coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutin
 
 # Coil (imagens de thumbnail)
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+
+# Splash Screen
+core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "core-splashscreen" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
