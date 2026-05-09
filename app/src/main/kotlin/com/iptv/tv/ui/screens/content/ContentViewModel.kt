@@ -84,7 +84,6 @@ class ContentViewModel @Inject constructor(
     }
 
     fun recordToHistory(stream: Stream) {
-        if (stream.type != ContentType.LIVE) return
         viewModelScope.launch {
             watchHistoryRepository.addToHistory(stream, 0f)
         }

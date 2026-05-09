@@ -26,8 +26,8 @@ sealed class Screen(val route: String) {
     data object Login : Screen("login")
     data object LoginEdit : Screen("login_edit")
     data object Home : Screen("home")
-    data object Player : Screen("player/{streamId}/{streamUrl}/{streamName}/{startPosition}") {
-        fun route(streamId: String, encodedUrl: String, encodedName: String, startPosition: Long = 0L) = "player/$streamId/$encodedUrl/$encodedName/$startPosition"
+    data object Player : Screen("player/{streamId}/{streamUrl}/{streamName}/{streamType}/{startPosition}") {
+        fun route(streamId: String, encodedUrl: String, encodedName: String, encodedStreamType: String, startPosition: Long = 0L) = "player/$streamId/$encodedUrl/$encodedName/$encodedStreamType/$startPosition"
     }
     data object Detail : Screen("detail/{streamId}/{streamUrl}/{streamName}/{posterUrl}/{categoryId}/{contentType}") {
         fun route(
@@ -38,12 +38,12 @@ sealed class Screen(val route: String) {
             categoryId: String,
             contentType: ContentType
         ): String {
-            val encodedStreamId = java.net.URLEncoder.encode(streamId, "UTF-8")
-            val encodedStreamUrl = java.net.URLEncoder.encode(streamUrl, "UTF-8")
-            val encodedStreamName = java.net.URLEncoder.encode(streamName, "UTF-8")
-            val encodedPosterUrl = java.net.URLEncoder.encode(posterUrl ?: "", "UTF-8")
-            val encodedCategoryId = java.net.URLEncoder.encode(categoryId, "UTF-8")
-            val encodedContentType = java.net.URLEncoder.encode(contentType.name, "UTF-8")
+            val encodedStreamId = java.net.URLEncoder.encode(streamId, "UTF-8").replace("+", "%20")
+            val encodedStreamUrl = java.net.URLEncoder.encode(streamUrl, "UTF-8").replace("+", "%20")
+            val encodedStreamName = java.net.URLEncoder.encode(streamName, "UTF-8").replace("+", "%20")
+            val encodedPosterUrl = java.net.URLEncoder.encode(posterUrl ?: "", "UTF-8").replace("+", "%20")
+            val encodedCategoryId = java.net.URLEncoder.encode(categoryId, "UTF-8").replace("+", "%20")
+            val encodedContentType = java.net.URLEncoder.encode(contentType.name, "UTF-8").replace("+", "%20")
             return "detail/$encodedStreamId/$encodedStreamUrl/$encodedStreamName/$encodedPosterUrl/$encodedCategoryId/$encodedContentType"
         }
     }
@@ -55,11 +55,11 @@ sealed class Screen(val route: String) {
             posterUrl: String?,
             categoryId: String
         ): String {
-            val encodedStreamId = java.net.URLEncoder.encode(streamId, "UTF-8")
-            val encodedStreamUrl = java.net.URLEncoder.encode(streamUrl, "UTF-8")
-            val encodedStreamName = java.net.URLEncoder.encode(streamName, "UTF-8")
-            val encodedPosterUrl = java.net.URLEncoder.encode(posterUrl ?: "", "UTF-8")
-            val encodedCategoryId = java.net.URLEncoder.encode(categoryId, "UTF-8")
+            val encodedStreamId = java.net.URLEncoder.encode(streamId, "UTF-8").replace("+", "%20")
+            val encodedStreamUrl = java.net.URLEncoder.encode(streamUrl, "UTF-8").replace("+", "%20")
+            val encodedStreamName = java.net.URLEncoder.encode(streamName, "UTF-8").replace("+", "%20")
+            val encodedPosterUrl = java.net.URLEncoder.encode(posterUrl ?: "", "UTF-8").replace("+", "%20")
+            val encodedCategoryId = java.net.URLEncoder.encode(categoryId, "UTF-8").replace("+", "%20")
             return "series_detail/$encodedStreamId/$encodedStreamUrl/$encodedStreamName/$encodedPosterUrl/$encodedCategoryId"
         }
     }
@@ -116,19 +116,21 @@ fun IPTVNavHost() {
                             )
                         }
                         else -> {
-                            val encodedId = java.net.URLEncoder.encode(stream.id, "UTF-8")
-                            val encodedUrl = java.net.URLEncoder.encode(stream.streamUrl, "UTF-8")
-                            val encodedName = java.net.URLEncoder.encode(stream.name, "UTF-8")
-                            navController.navigate(Screen.Player.route(encodedId, encodedUrl, encodedName))
+                            val encodedId = java.net.URLEncoder.encode(stream.id, "UTF-8").replace("+", "%20")
+                            val encodedUrl = java.net.URLEncoder.encode(stream.streamUrl, "UTF-8").replace("+", "%20")
+                            val encodedName = java.net.URLEncoder.encode(stream.name, "UTF-8").replace("+", "%20")
+                            val encodedType = java.net.URLEncoder.encode(stream.type.name, "UTF-8").replace("+", "%20")
+                            navController.navigate(Screen.Player.route(encodedId, encodedUrl, encodedName, encodedType))
                         }
                     }
                 },
             onPlayEpisode = { episodeUrl, episodeName, startPosition ->
                 navController.navigate(
                     Screen.Player.route(
-                        java.net.URLEncoder.encode(episodeUrl, "UTF-8"),
-                        java.net.URLEncoder.encode(episodeUrl, "UTF-8"),
-                        java.net.URLEncoder.encode(episodeName, "UTF-8"),
+                        java.net.URLEncoder.encode(episodeUrl, "UTF-8").replace("+", "%20"),
+                        java.net.URLEncoder.encode(episodeUrl, "UTF-8").replace("+", "%20"),
+                        java.net.URLEncoder.encode(episodeName, "UTF-8").replace("+", "%20"),
+                        java.net.URLEncoder.encode(ContentType.SERIES.name, "UTF-8").replace("+", "%20"),
                         startPosition
                     )
                 )
@@ -142,30 +144,34 @@ fun IPTVNavHost() {
             )
         }
 
-        composable(
-            route = Screen.Player.route,
-            arguments = listOf(
-                navArgument("streamId") { type = NavType.StringType },
-                navArgument("streamUrl") { type = NavType.StringType },
-                navArgument("streamName") { type = NavType.StringType },
-                navArgument("startPosition") { type = NavType.LongType; defaultValue = 0L }
-            )
-        ) { backStack ->
-            val args = backStack.arguments
-            val streamId = java.net.URLDecoder.decode(args?.getString("streamId") ?: "", "UTF-8")
-            val encodedUrl = args?.getString("streamUrl") ?: return@composable
-            val encodedName = args?.getString("streamName") ?: ""
-            val startPosition = args?.getLong("startPosition") ?: 0L
-            val streamUrl = java.net.URLDecoder.decode(encodedUrl, "UTF-8")
-            val streamName = java.net.URLDecoder.decode(encodedName, "UTF-8")
-            PlayerScreen(
-                streamId = streamId,
-                streamUrl = streamUrl,
-                streamName = streamName,
-                startPosition = startPosition,
-                onBack = { navController.popBackStack() }
-            )
-        }
+composable(
+        route = Screen.Player.route,
+        arguments = listOf(
+            navArgument("streamId") { type = NavType.StringType },
+            navArgument("streamUrl") { type = NavType.StringType },
+            navArgument("streamName") { type = NavType.StringType },
+            navArgument("streamType") { type = NavType.StringType; defaultValue = "LIVE" },
+            navArgument("startPosition") { type = NavType.LongType; defaultValue = 0L }
+        )
+    ) { backStack ->
+        val args = backStack.arguments
+        val streamId = java.net.URLDecoder.decode(args?.getString("streamId") ?: "", "UTF-8")
+        val encodedUrl = args?.getString("streamUrl") ?: return@composable
+        val encodedName = args?.getString("streamName") ?: ""
+        val streamTypeStr = args?.getString("streamType") ?: "LIVE"
+        val startPosition = args?.getLong("startPosition") ?: 0L
+        val streamUrl = java.net.URLDecoder.decode(encodedUrl, "UTF-8")
+        val streamName = java.net.URLDecoder.decode(encodedName, "UTF-8")
+        val streamType = try { ContentType.valueOf(streamTypeStr) } catch (e: Exception) { ContentType.LIVE }
+        PlayerScreen(
+            streamId = streamId,
+            streamUrl = streamUrl,
+            streamName = streamName,
+            streamType = streamType,
+            startPosition = startPosition,
+            onBack = { navController.popBackStack() }
+        )
+    }
 
         composable(
             route = Screen.Detail.route,
@@ -205,10 +211,11 @@ fun IPTVNavHost() {
             DetailScreen(
                 stream = stream,
                 onPlay = { playStream, startPosition ->
-                    val encodedId = java.net.URLEncoder.encode(playStream.id, "UTF-8")
-                    val encodedUrl = java.net.URLEncoder.encode(playStream.streamUrl, "UTF-8")
-                    val encodedName = java.net.URLEncoder.encode(playStream.name, "UTF-8")
-                    navController.navigate(Screen.Player.route(encodedId, encodedUrl, encodedName, startPosition))
+                    val encodedId = java.net.URLEncoder.encode(playStream.id, "UTF-8").replace("+", "%20")
+                    val encodedUrl = java.net.URLEncoder.encode(playStream.streamUrl, "UTF-8").replace("+", "%20")
+                    val encodedName = java.net.URLEncoder.encode(playStream.name, "UTF-8").replace("+", "%20")
+                    val encodedType = java.net.URLEncoder.encode(playStream.type.name, "UTF-8").replace("+", "%20")
+                    navController.navigate(Screen.Player.route(encodedId, encodedUrl, encodedName, encodedType, startPosition))
                 }
             )
         }
@@ -246,9 +253,10 @@ fun IPTVNavHost() {
                 onPlayEpisode = { episodeUrl, episodeName, startPosition ->
                     navController.navigate(
                         Screen.Player.route(
-                            java.net.URLEncoder.encode(episodeUrl, "UTF-8"),
-                            java.net.URLEncoder.encode(episodeUrl, "UTF-8"),
-                            java.net.URLEncoder.encode(episodeName, "UTF-8"),
+                            java.net.URLEncoder.encode(episodeUrl, "UTF-8").replace("+", "%20"),
+                            java.net.URLEncoder.encode(episodeUrl, "UTF-8").replace("+", "%20"),
+                            java.net.URLEncoder.encode(episodeName, "UTF-8").replace("+", "%20"),
+                            java.net.URLEncoder.encode(ContentType.SERIES.name, "UTF-8").replace("+", "%20"),
                             startPosition
                         )
                     )
@@ -259,10 +267,11 @@ fun IPTVNavHost() {
         composable(Screen.Favorites.route) {
             FavoritesScreen(
                 onStreamSelected = { stream ->
-                    val encodedId = java.net.URLEncoder.encode(stream.id, "UTF-8")
-                    val encodedUrl = java.net.URLEncoder.encode(stream.streamUrl, "UTF-8")
-                    val encodedName = java.net.URLEncoder.encode(stream.name, "UTF-8")
-                    navController.navigate(Screen.Player.route(encodedId, encodedUrl, encodedName))
+                    val encodedId = java.net.URLEncoder.encode(stream.id, "UTF-8").replace("+", "%20")
+                    val encodedUrl = java.net.URLEncoder.encode(stream.streamUrl, "UTF-8").replace("+", "%20")
+                    val encodedName = java.net.URLEncoder.encode(stream.name, "UTF-8").replace("+", "%20")
+                    val encodedType = java.net.URLEncoder.encode(stream.type.name, "UTF-8").replace("+", "%20")
+                    navController.navigate(Screen.Player.route(encodedId, encodedUrl, encodedName, encodedType))
                 },
                 onBack = { navController.popBackStack() }
             )

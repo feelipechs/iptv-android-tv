@@ -32,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.ui.PlayerView
 import androidx.tv.material3.*
 import androidx.compose.ui.graphics.Color
+import com.iptv.tv.domain.model.ContentType
 import kotlinx.coroutines.delay
 
 @Composable
@@ -39,6 +40,7 @@ fun PlayerScreen(
     streamId: String,
     streamUrl: String,
     streamName: String = "",
+    streamType: ContentType = ContentType.LIVE,
     startPosition: Long = 0L,
     onBack: () -> Unit,
     viewModel: PlayerViewModel = hiltViewModel()

@@ -99,8 +99,10 @@ class HomeViewModel @Inject constructor(
                     }
                 }
 RECENTS_CATEGORY_ID -> {
-                watchHistoryRepository.getHistoryByType(contentType).map { history ->
-                        history.map { entry ->
+                watchHistoryRepository.getAllHistory().map { history ->
+                    history
+                        .filter { it.type == contentType }
+                        .map { entry ->
                             Stream(
                                 id = entry.streamId,
                                 name = entry.name,
@@ -115,8 +117,8 @@ RECENTS_CATEGORY_ID -> {
                                 lastEpisodeUrl = entry.lastEpisodeUrl
                             )
                         }
-                    }
                 }
+            }
                 null -> flowOf(emptyList())
                 else -> getStreamsUseCase(categoryId, contentType)
             }
@@ -316,7 +318,6 @@ val uiState: StateFlow<HomeUiState> = combine(
     }
 
     fun recordToHistory(stream: Stream) {
-        if (stream.type != ContentType.LIVE) return
         viewModelScope.launch {
             watchHistoryRepository.addToHistory(stream, 0f)
         }

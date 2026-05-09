@@ -10,6 +10,7 @@ import com.iptv.tv.domain.repository.WatchHistoryRepository
 import com.iptv.tv.player.PlayerManager
 import com.iptv.tv.player.PlayerState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.net.URLDecoder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
@@ -24,9 +25,12 @@ class PlayerViewModel @Inject constructor(
     @ApplicationScope private val applicationScope: CoroutineScope
 ) : ViewModel() {
 
-    private val streamId: String = savedStateHandle["streamId"] ?: ""
-    private val streamUrl: String = savedStateHandle["streamUrl"] ?: ""
-    private val streamName: String = savedStateHandle["streamName"] ?: ""
+    private val streamId: String = URLDecoder.decode(savedStateHandle["streamId"] ?: "", "UTF-8")
+    private val streamUrl: String = URLDecoder.decode(savedStateHandle["streamUrl"] ?: "", "UTF-8")
+    private val streamName: String = URLDecoder.decode(savedStateHandle["streamName"] ?: "", "UTF-8")
+    private val streamType: ContentType = try {
+        ContentType.valueOf(URLDecoder.decode(savedStateHandle["streamType"] ?: "LIVE", "UTF-8"))
+    } catch (e: Exception) { ContentType.LIVE }
     private val startPosition: Long = savedStateHandle["startPosition"] ?: 0L
 
     val playerState: StateFlow<PlayerState> = playerManager.state
@@ -71,14 +75,14 @@ class PlayerViewModel @Inject constructor(
             val pos = currentPosition
             val dur = duration
             val progress = if (dur > 0L) pos.toFloat() / dur.toFloat() else 0f
-            val stream = Stream(
-                id = streamId,
-                name = streamName,
-                categoryId = "",
-                type = ContentType.VOD,
-                streamUrl = streamUrl,
-                posterUrl = null
-            )
+val stream = Stream(
+            id = streamId,
+            name = streamName,
+            categoryId = "",
+            type = streamType,
+            streamUrl = streamUrl,
+            posterUrl = null
+        )
             applicationScope.launch {
                 watchHistoryRepository.addToHistory(stream, progress)
             }
