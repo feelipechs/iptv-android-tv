@@ -90,36 +90,6 @@ fun LoginScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.width(480.dp)
         ) {
-            if (onBack != null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start
-                ) {
-                    Surface(
-                        onClick = onBack,
-                        colors = ClickableSurfaceDefaults.colors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            focusedContainerColor = MaterialTheme.colorScheme.primary,
-                            focusedContentColor = MaterialTheme.colorScheme.onPrimary,
-                            pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                            pressedContentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
-                    ) {
-                        Box(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "← Cancelar",
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
-                    }
-                }
-            }
-
         Image(
             painter = painterResource(id = R.drawable.ic_app_logo),
             contentDescription = "KotlinTV",

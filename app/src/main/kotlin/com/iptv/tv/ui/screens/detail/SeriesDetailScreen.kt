@@ -61,7 +61,7 @@ import androidx.compose.ui.focus.onFocusChanged
 @Composable
 fun SeriesDetailScreen(
     stream: Stream,
-    onPlayEpisode: (String, String, String, Long, String) -> Unit,
+    onPlayEpisode: (String, String, String, Long, String, String, String, String) -> Unit,
     viewModel: SeriesDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -70,21 +70,28 @@ fun SeriesDetailScreen(
         viewModel.setStream(stream)
     }
 
-val playButtonFocusRequester = remember { FocusRequester() }
-val favButtonFocusRequester = remember { FocusRequester() }
+    val playButtonFocusRequester = remember { FocusRequester() }
+    val favButtonFocusRequester = remember { FocusRequester() }
 
-var resumeUrl by remember { mutableStateOf<String?>(null) }
-LaunchedEffect(uiState.isLoading, uiState.episodes) {
-    if (!uiState.isLoading) {
-        resumeUrl = viewModel.getResumeUrl()
+    val resumeUrl = uiState.lastEpisodeUrl
+        ?: uiState.episodes
+            ?.entries
+            ?.sortedBy { it.key.toIntOrNull() ?: Int.MAX_VALUE }
+            ?.firstOrNull()
+            ?.value
+            ?.firstOrNull()
+            ?.let { uiState.episodeStreamUrls[it.id] }
+
+    LaunchedEffect(resumeUrl) {
         kotlinx.coroutines.delay(300)
         try {
             if (resumeUrl != null) playButtonFocusRequester.requestFocus()
             else favButtonFocusRequester.requestFocus()
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
     }
-}
-val isResume = uiState.lastEpisodeUrl != null
+
+    val isResume = uiState.lastEpisodeUrl != null
 
     Box(
         modifier = Modifier
@@ -125,24 +132,32 @@ val isResume = uiState.lastEpisodeUrl != null
 
                 if (uiState.seriesInfo != null) {
                     item {
-                SeriesHeader(
-                    seriesInfo = uiState.seriesInfo!!,
-                    stream = stream,
-                    isFavorite = uiState.isFavorite,
-                    onToggleFavorite = { viewModel.toggleFavorite(stream) },
-                    playButtonFocusRequester = playButtonFocusRequester,
-                    favButtonFocusRequester = favButtonFocusRequester,
+                        SeriesHeader(
+                            seriesInfo = uiState.seriesInfo!!,
+                            stream = stream,
+                            isFavorite = uiState.isFavorite,
+                            onToggleFavorite = { viewModel.toggleFavorite(stream) },
+                            playButtonFocusRequester = playButtonFocusRequester,
+                            favButtonFocusRequester = favButtonFocusRequester,
                             resumeUrl = resumeUrl,
                             isResume = isResume,
-                            onPlayClick = {
-                                val resumeEpisode = viewModel.getResumeEpisode()
-                                resumeEpisode?.let { (episode, season) ->
-                                    if (stream.name.isNotBlank() && stream.id.isNotBlank()) {
-                                        viewModel.addToHistory(stream, episode, season)
-                                    }
-                                    resumeUrl?.let { url -> onPlayEpisode(episode.id, url, episode.title ?: stream.name, -1L, stream.id) }
-                                }
-                            },
+        onPlayClick = {
+            val resumeEpisode = viewModel.getResumeEpisode()
+            resumeEpisode?.let { (episode, season) ->
+                resumeUrl?.let { url ->
+                    onPlayEpisode(
+                        episode.id,
+                        url,
+                        episode.title ?: stream.name,
+                        -1L,
+                        stream.id,
+                        stream.posterUrl ?: "",
+                        season,
+                        episode.episodeNum
+                    )
+                }
+            }
+        },
                             uiState = uiState
                         )
                     }
@@ -175,22 +190,22 @@ val isResume = uiState.lastEpisodeUrl != null
                     }
 
                     itemsIndexed(uiState.episodesForSelectedSeason) { index, episode ->
-            val epUrl = uiState.episodeStreamUrls[episode.id] ?: ""
-            val epProgress = uiState.episodeProgress[episode.id] ?: 0f
-                        EpisodeItem(
-                            episode = episode,
-                            episodeProgress = epProgress,
-                            onClick = {
-                                if (stream.name.isNotBlank() && stream.id.isNotBlank()) {
-                                    viewModel.addToHistory(stream, episode, uiState.selectedSeason)
-                                }
-            onPlayEpisode(
-                episode.id, epUrl,
-                episode.title ?: "Episódio ${episode.episodeNum}",
-                if (epProgress > 0.05f) -1L else 0L,
-                stream.id
-            )
-                            },
+                        val epUrl = uiState.episodeStreamUrls[episode.id] ?: ""
+                        val epProgress = uiState.episodeProgress[episode.id] ?: 0f
+        EpisodeItem(
+            episode = episode,
+            episodeProgress = epProgress,
+            onClick = {
+                onPlayEpisode(
+                    episode.id, epUrl,
+                    episode.title ?: "Episódio ${episode.episodeNum}",
+                    if (epProgress > 0.05f) -1L else 0L,
+                    stream.id,
+                    stream.posterUrl ?: "",
+                    uiState.selectedSeason,
+                    episode.episodeNum
+                )
+            },
                             modifier = Modifier
                         )
                     }
@@ -303,11 +318,11 @@ private fun SeriesHeader(
                     }
                 }
 
-        Surface(
-            onClick = onToggleFavorite,
-            modifier = Modifier
-                .focusRequester(favButtonFocusRequester)
-                .clip(RoundedCornerShape(8.dp)),
+                Surface(
+                    onClick = onToggleFavorite,
+                    modifier = Modifier
+                        .focusRequester(favButtonFocusRequester)
+                        .clip(RoundedCornerShape(8.dp)),
                     colors = ClickableSurfaceDefaults.colors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                         focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -397,26 +412,26 @@ private fun SeriesHeader(
                 }
             }
 
-if (!seriesInfo.actors.isNullOrBlank()) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Person,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = seriesInfo.actors,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
+            if (!seriesInfo.actors.isNullOrBlank()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = seriesInfo.actors,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
-        }
 
             if (!seriesInfo.director.isNullOrBlank()) {
                 Row(
@@ -437,16 +452,16 @@ if (!seriesInfo.actors.isNullOrBlank()) {
                 }
             }
 
-if (!seriesInfo.plot.isNullOrBlank()) {
-            Text(
-                text = seriesInfo.plot,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-                modifier = Modifier.padding(top = 8.dp),
-                maxLines = 4,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+            if (!seriesInfo.plot.isNullOrBlank()) {
+                Text(
+                    text = seriesInfo.plot,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                    modifier = Modifier.padding(top = 8.dp),
+                    maxLines = 4,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }

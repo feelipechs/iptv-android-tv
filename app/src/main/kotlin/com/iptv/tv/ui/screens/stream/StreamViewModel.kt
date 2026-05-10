@@ -101,18 +101,24 @@ class StreamViewModel @Inject constructor(
             _isLoading.value = true
             when (categoryId) {
                 FAVORITES_CATEGORY_ID -> {
-                    favoritesRepository.getFavoritesByType(type).collect { favs: List<FavoriteEntry> ->
-                        _streams.value = favs.map { fav: FavoriteEntry ->
-                            Stream(fav.streamId, fav.name, fav.categoryId, fav.type, fav.streamUrl, fav.posterUrl)
-                        }
+            favoritesRepository.getFavoritesByType(type).collect { favs: List<FavoriteEntry> ->
+                _streams.value = favs.map { fav: FavoriteEntry ->
+                    Stream(
+                        fav.streamId, fav.name, fav.categoryId, fav.type,
+                        if (fav.type == ContentType.SERIES) "" else fav.streamUrl,
+                        fav.posterUrl
+                    )
+                }
                         _isLoading.value = false
                     }
                 }
                 RECENTS_CATEGORY_ID -> {
-                    watchHistoryRepository.getHistoryByType(type).collect { history: List<WatchHistoryEntry> ->
-                        _streams.value = history.map { entry: WatchHistoryEntry ->
-                            Stream(
-                                entry.streamId, entry.name, entry.categoryId, entry.type, entry.streamUrl, entry.posterUrl,
+            watchHistoryRepository.getHistoryByType(type).collect { history: List<WatchHistoryEntry> ->
+                _streams.value = history.map { entry: WatchHistoryEntry ->
+                    Stream(
+                        entry.streamId, entry.name, entry.categoryId, entry.type,
+                        if (entry.type == ContentType.SERIES) "" else entry.streamUrl,
+                        entry.posterUrl,
                                 progress = entry.progress,
                                 lastEpisodeNum = entry.lastEpisodeNum,
                                 lastEpisodeTitle = entry.lastEpisodeTitle,

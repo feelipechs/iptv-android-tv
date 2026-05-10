@@ -56,8 +56,8 @@ class SeriesDetailViewModel @Inject constructor(
     }
 
     init {
+        loadHistory()
         viewModelScope.launch {
-            loadHistory()
             loadSeriesInfo()
             loadEpisodeProgress()
         }
@@ -66,16 +66,16 @@ class SeriesDetailViewModel @Inject constructor(
         }
     }
 
-    private suspend fun loadHistory() {
-        try {
-            val history = watchHistoryRepository.getAllHistory().first()
-            val entry = history.firstOrNull { it.streamId == streamId }
-            _uiState.value = _uiState.value.copy(
-                lastEpisodeUrl = entry?.lastEpisodeUrl,
-                lastEpisodeNum = entry?.lastEpisodeNum,
-                lastSeason = entry?.lastSeason
-            )
-        } catch (e: Exception) {
+    private fun loadHistory() {
+        viewModelScope.launch {
+            watchHistoryRepository.observeHistoryEntry(streamId).collect { entry ->
+                _uiState.value = _uiState.value.copy(
+                    lastEpisodeUrl = entry?.lastEpisodeUrl,
+                    lastEpisodeNum = entry?.lastEpisodeNum,
+                    lastSeason = entry?.lastSeason
+                )
+                android.util.Log.d("SeriesDetailVM", "History atualizado: lastEpisodeUrl=${entry?.lastEpisodeUrl}, lastSeason=${entry?.lastSeason}, lastEpisodeNum=${entry?.lastEpisodeNum}")
+            }
         }
     }
 

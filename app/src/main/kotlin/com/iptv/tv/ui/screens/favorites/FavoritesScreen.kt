@@ -24,6 +24,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.*
 import coil.compose.AsyncImage
+import com.iptv.tv.domain.model.ContentType
 import com.iptv.tv.domain.model.FavoriteEntry
 import com.iptv.tv.domain.model.Stream
 import com.iptv.tv.domain.model.WatchHistoryEntry
@@ -38,64 +39,13 @@ fun FavoritesScreen(
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 48.dp, vertical = 24.dp)) {
 
-    Row(
-        modifier = Modifier.fillMaxWidth().focusGroup(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-        Surface(
-            onClick = onBack,
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                focusedContainerColor = MaterialTheme.colorScheme.primary,
-                focusedContentColor = MaterialTheme.colorScheme.onPrimary,
-                pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                pressedContentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-                    shape = ClickableSurfaceDefaults.shape(shape = MaterialTheme.shapes.small),
-                    modifier = Modifier.padding(end = 16.dp)
-                ) {
-                    Text("← Voltar", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-                }
-                Text(
-                    text = "Favoritos & Histórico",
-                    style = MaterialTheme.typography.headlineMedium
-                )
-            }
-            if (state.history.isNotEmpty()) {
-        Surface(
-            onClick = viewModel::clearHistory,
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                focusedContainerColor = MaterialTheme.colorScheme.error,
-                focusedContentColor = MaterialTheme.colorScheme.onError,
-                pressedContainerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
-                pressedContentColor = MaterialTheme.colorScheme.onError
-            ),
-                    shape = ClickableSurfaceDefaults.shape(shape = MaterialTheme.shapes.small)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Delete,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text("Limpar", style = MaterialTheme.typography.labelMedium)
-                    }
-                }
-            }
-        }
+    Text(
+        text = "Favoritos & Histórico",
+        style = MaterialTheme.typography.headlineMedium,
+        modifier = Modifier.padding(bottom = 24.dp)
+    )
 
-        Spacer(Modifier.height(24.dp))
-
-        when {
+    when {
             state.isLoading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("Carregando…")
@@ -120,15 +70,15 @@ fun FavoritesScreen(
                                 favorite = favorite,
                                 onRemove = { viewModel.removeFavorite(favorite.streamId) },
                                 onClick = {
-                                    onStreamSelected(
-                                        Stream(
-                                            id = favorite.streamId,
-                                            name = favorite.name,
-                                            categoryId = favorite.categoryId,
-                                            type = favorite.type,
-                                            streamUrl = favorite.streamUrl,
-                                            posterUrl = favorite.posterUrl
-                                        )
+                    onStreamSelected(
+                        Stream(
+                            id = favorite.streamId,
+                            name = favorite.name,
+                            categoryId = favorite.categoryId,
+                            type = favorite.type,
+                            streamUrl = if (favorite.type == ContentType.SERIES) "" else favorite.streamUrl,
+                            posterUrl = favorite.posterUrl
+                        )
                                     )
                                 }
                             )
@@ -148,16 +98,20 @@ fun FavoritesScreen(
                                 entry = historyEntry,
                                 onDelete = { viewModel.deleteHistoryEntry(historyEntry.streamId) },
                                 onClick = {
-                                    onStreamSelected(
-                                        Stream(
-                                            id = historyEntry.streamId,
-                                            name = historyEntry.name,
-                                            categoryId = historyEntry.categoryId,
-                                            type = historyEntry.type,
-                                            streamUrl = historyEntry.streamUrl,
-                                            posterUrl = historyEntry.posterUrl,
-                                            progress = historyEntry.progress
-                                        )
+                    onStreamSelected(
+                        Stream(
+                            id = historyEntry.streamId,
+                            name = historyEntry.name,
+                            categoryId = historyEntry.categoryId,
+                            type = historyEntry.type,
+                            streamUrl = if (historyEntry.type == ContentType.SERIES) "" else historyEntry.streamUrl,
+                            posterUrl = historyEntry.posterUrl,
+                            progress = historyEntry.progress,
+                            lastEpisodeNum = historyEntry.lastEpisodeNum,
+                            lastEpisodeTitle = historyEntry.lastEpisodeTitle,
+                            lastSeason = historyEntry.lastSeason,
+                            lastEpisodeUrl = historyEntry.lastEpisodeUrl
+                        )
                                     )
                                 }
                             )

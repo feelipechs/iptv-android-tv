@@ -113,6 +113,9 @@ interface WatchHistoryDao {
     @Query("SELECT * FROM watch_history WHERE streamId = :streamId LIMIT 1")
     suspend fun getById(streamId: String): WatchHistoryEntity?
 
+    @Query("SELECT * FROM watch_history WHERE streamId = :streamId LIMIT 1")
+    fun observeById(streamId: String): Flow<WatchHistoryEntity?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(history: WatchHistoryEntity)
 

@@ -156,7 +156,7 @@ fun DetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                 val progress = uiState.savedProgress
-                val showContinue = progress != null && progress > 0.05f
+                val showContinue = progress != null && progress > 0.01f
 
                 if (showContinue) {
       Surface(
@@ -184,11 +184,19 @@ fun DetailScreen(
                                     tint = MaterialTheme.colorScheme.onPrimary
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Continuar",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
+                Text(
+                    text = "Continuar",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+                val progressPercent = ((uiState.savedProgress ?: 0f) * 100).toInt()
+                if (progressPercent > 1) {
+                    Text(
+                        text = "$progressPercent%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                    )
+                }
                             }
                         }
 

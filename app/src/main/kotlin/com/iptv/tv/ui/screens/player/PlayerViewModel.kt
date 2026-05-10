@@ -33,6 +33,10 @@ class PlayerViewModel @Inject constructor(
     } catch (e: Exception) { ContentType.LIVE }
     private val startPosition: Long = savedStateHandle["startPosition"] ?: 0L
     private val seriesId: String = URLDecoder.decode(savedStateHandle["seriesId"] ?: "", "UTF-8")
+    private val posterUrl: String = URLDecoder.decode(savedStateHandle["posterUrl"] ?: "", "UTF-8")
+    private val episodeSeason: String = URLDecoder.decode(savedStateHandle["episodeSeason"] ?: "", "UTF-8")
+    private val episodeNum: String = URLDecoder.decode(savedStateHandle["episodeNum"] ?: "", "UTF-8")
+    private val episodeTitle: String = URLDecoder.decode(savedStateHandle["episodeTitle"] ?: "", "UTF-8")
 
     val playerState: StateFlow<PlayerState> = playerManager.state
     val player get() = playerManager.player
@@ -78,17 +82,31 @@ class PlayerViewModel @Inject constructor(
             val dur = duration
             val progress = if (dur > 0L) pos.toFloat() / dur.toFloat() else 0f
             val historyId = if (streamType == ContentType.SERIES && seriesId.isNotBlank()) seriesId else streamId
+        applicationScope.launch {
+            android.util.Log.d("PlayerVM", "Salvando histórico: historyId=$historyId, streamId=$streamId, type=$streamType")
+            val existingEntry = watchHistoryRepository.getHistoryEntry(historyId)
             val stream = Stream(
                 id = historyId,
                 name = streamName,
-                categoryId = "",
+                categoryId = existingEntry?.categoryId ?: "",
                 type = streamType,
                 streamUrl = streamUrl,
-                posterUrl = null
+                posterUrl = existingEntry?.posterUrl ?: posterUrl.ifBlank { null }
             )
-            applicationScope.launch {
+            if (streamType == ContentType.SERIES && episodeSeason.isNotBlank()) {
+                watchHistoryRepository.addToHistory(
+                    stream = stream,
+                    progress = progress,
+                    episodeNum = episodeNum.toIntOrNull(),
+                    episodeTitle = episodeTitle.ifBlank { null },
+                    season = episodeSeason,
+                    episodeUrl = streamUrl
+                )
+            } else {
                 watchHistoryRepository.addToHistory(stream, progress)
             }
+            android.util.Log.d("PlayerVM", "Histórico salvo: id=${stream.id}, progress=$progress, posterUrl=${stream.posterUrl}, season=$episodeSeason, episodeNum=$episodeNum")
+        }
         }
         playerManager.stop()
         super.onCleared()

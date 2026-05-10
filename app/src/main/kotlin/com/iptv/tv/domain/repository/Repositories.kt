@@ -52,6 +52,7 @@ interface WatchHistoryRepository {
     fun getRecentHistory(limit: Int): Flow<List<WatchHistoryEntry>>
     fun getHistoryCount(): Flow<Int>
     suspend fun getHistoryEntry(streamId: String): WatchHistoryEntry?
+    fun observeHistoryEntry(streamId: String): Flow<WatchHistoryEntry?>
     suspend fun addToHistory(
         stream: Stream,
         progress: Float = 0f,

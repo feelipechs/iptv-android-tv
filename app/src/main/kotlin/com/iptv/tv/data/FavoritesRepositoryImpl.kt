@@ -104,6 +104,9 @@ class WatchHistoryRepositoryImpl @Inject constructor(
     override suspend fun getHistoryEntry(streamId: String): WatchHistoryEntry? =
         watchHistoryDao.getById(streamId)?.toDomain()
 
+    override fun observeHistoryEntry(streamId: String): Flow<WatchHistoryEntry?> =
+        watchHistoryDao.observeById(streamId).map { it?.toDomain() }
+
     override suspend fun addToHistory(
         stream: Stream,
         progress: Float,
@@ -113,6 +116,7 @@ class WatchHistoryRepositoryImpl @Inject constructor(
         episodeUrl: String?
     ) {
         if (stream.name.isBlank() || stream.id.isBlank()) return
+        android.util.Log.d("HistoryRepo", "addToHistory chamado: streamId=${stream.id}, progress=$progress, name=${stream.name}")
         watchHistoryDao.addToHistory(
             streamId = stream.id,
             name = stream.name,

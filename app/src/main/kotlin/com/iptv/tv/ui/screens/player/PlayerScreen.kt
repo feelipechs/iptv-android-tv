@@ -43,6 +43,10 @@ fun PlayerScreen(
     streamType: ContentType = ContentType.LIVE,
     startPosition: Long = 0L,
     seriesId: String = "",
+    posterUrl: String = "",
+    episodeSeason: String = "",
+    episodeNum: String = "",
+    episodeTitle: String = "",
     onBack: () -> Unit,
     viewModel: PlayerViewModel = hiltViewModel()
 ) {

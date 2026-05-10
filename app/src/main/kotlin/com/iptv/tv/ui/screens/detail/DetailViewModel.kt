@@ -84,8 +84,11 @@ class DetailViewModel @Inject constructor(
 
     private fun loadProgress(streamId: String) {
         viewModelScope.launch {
-            val entry = watchHistoryRepository.getHistoryEntry(streamId)
-            _savedProgress.value = if (entry != null && entry.progress > 0f) entry.progress else null
+            watchHistoryRepository.observeHistoryEntry(streamId).collect { entry ->
+                val progress = if (entry != null && entry.progress > 0f) entry.progress else null
+                _savedProgress.value = progress
+                android.util.Log.d("DetailVM", "streamId=$streamId, savedProgress=$progress")
+            }
         }
     }
 

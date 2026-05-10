@@ -29,7 +29,7 @@ fun StreamScreen(
     categoryId: String,
     type: ContentType,
     onStreamSelected: (Stream) -> Unit,
-    onPlayEpisode: (String, String, String, Long, String) -> Unit,
+    onPlayEpisode: (String, String, String, Long, String, String, String, String) -> Unit,
     onBack: () -> Unit,
     viewModel: StreamViewModel = hiltViewModel()
 ) {
@@ -151,7 +151,7 @@ fun StreamScreen(
                                     isFavorite = stream.id in uiState.favoriteIds,
                                     onFavorite = { viewModel.toggleFavorite(stream) },
                                     onClick = {
-                                        viewModel.recordToHistory(stream)
+                                        android.util.Log.d("StreamScreen", "LIVE click: id=${stream.id}")
                                         onStreamSelected(stream)
                                     },
                                     modifier = if (index == 0) Modifier.focusRequester(firstItemFocus) else Modifier
@@ -166,31 +166,20 @@ fun StreamScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            itemsIndexed(uiState.streams, key = { _, stream -> stream.id }) { index, stream ->
-                                val isSeriesEpisode = stream.type == ContentType.SERIES && stream.lastEpisodeUrl != null
-                                PosterCard(
-                                    name = stream.name,
-                                    posterUrl = stream.posterUrl,
-                                    isFavorite = stream.id in uiState.favoriteIds,
-                                    onFavorite = { viewModel.toggleFavorite(stream) },
-                                    onClick = {
-                                        if (isSeriesEpisode) {
-                                            val episodeUrl = stream.lastEpisodeUrl ?: return@PosterCard
-                                            val episodeId = extractEpisodeIdFromUrl(episodeUrl)
-                    onPlayEpisode(
-                        episodeId,
-                        episodeUrl,
-                        stream.lastEpisodeTitle ?: stream.name,
-                        -1L,
-                        stream.id
-                    )
-                                        } else if (stream.type == ContentType.SERIES) {
-                                            onStreamSelected(stream)
-                                        } else {
-                                            viewModel.recordToHistory(stream)
-                                            onStreamSelected(stream)
-                                        }
-                                    },
+                itemsIndexed(uiState.streams, key = { _, stream -> stream.id }) { index, stream ->
+                        PosterCard(
+                            name = stream.name,
+                            posterUrl = stream.posterUrl,
+                            isFavorite = stream.id in uiState.favoriteIds,
+                            onFavorite = { viewModel.toggleFavorite(stream) },
+                            onClick = {
+                                if (stream.type == ContentType.SERIES) {
+                                    android.util.Log.d("StreamScreen", "SERIES click: id=${stream.id}, url=${stream.streamUrl}, type=${stream.type}")
+                                    onStreamSelected(stream)
+                                } else {
+                                    onStreamSelected(stream)
+                                }
+                            },
                                     modifier = if (index == 0) Modifier.focusRequester(firstItemFocus) else Modifier
                                 )
                             }
