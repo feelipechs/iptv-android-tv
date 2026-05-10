@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -36,6 +37,7 @@ fun LoginScreen(
 
     val focusManager = LocalFocusManager.current
     val serverFocusRequester = remember { FocusRequester() }
+    val loginButtonFocusRequester = remember { FocusRequester() }
 
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -174,7 +176,7 @@ fun LoginScreen(
                             imeAction = ImeAction.Done
                         ),
                         keyboardActions = KeyboardActions(
-                            onDone = { focusManager.clearFocus() }
+                            onDone = { loginButtonFocusRequester.requestFocus() }
                         )
                     )
                 }
@@ -239,7 +241,9 @@ fun LoginScreen(
 
             Surface(
                 onClick = { if (canLogin && !state.isLoading) viewModel.login() },
-                modifier = Modifier.fillMaxWidth().height(52.dp).clip(RoundedCornerShape(8.dp)),
+                modifier = Modifier
+                    .fillMaxWidth().height(52.dp).clip(RoundedCornerShape(8.dp))
+                    .focusRequester(loginButtonFocusRequester),
                 colors = ClickableSurfaceDefaults.colors(
                     containerColor = if (canLogin) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     contentColor = if (canLogin) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),

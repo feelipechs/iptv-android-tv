@@ -10,6 +10,7 @@ import com.iptv.tv.domain.model.WatchHistoryEntry
 import com.iptv.tv.domain.repository.FavoritesRepository
 import com.iptv.tv.domain.repository.WatchHistoryRepository
 import com.iptv.tv.domain.usecase.GetStreamsUseCase
+import com.iptv.tv.domain.usecase.GetCategoriesUseCase
 import com.iptv.tv.domain.usecase.RefreshStreamsUseCase
 import com.iptv.tv.ui.screens.home.FAVORITES_CATEGORY_ID
 import com.iptv.tv.ui.screens.home.RECENTS_CATEGORY_ID
@@ -28,7 +29,8 @@ data class StreamUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val favoriteIds: Set<String> = emptySet(),
-    val searchQuery: String = ""
+    val searchQuery: String = "",
+    val categoryName: String = ""
 )
 
 @HiltViewModel
@@ -36,6 +38,7 @@ class StreamViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getStreamsUseCase: GetStreamsUseCase,
     private val refreshStreamsUseCase: RefreshStreamsUseCase,
+    private val getCategoriesUseCase: GetCategoriesUseCase,
     private val favoritesRepository: FavoritesRepository,
     private val watchHistoryRepository: WatchHistoryRepository
 ) : ViewModel() {
@@ -55,27 +58,38 @@ class StreamViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     private val _error = MutableStateFlow<String?>(null)
     private val _streams = MutableStateFlow<List<Stream>>(emptyList())
+    private val _categoryName = MutableStateFlow(
+        when (categoryId) {
+            FAVORITES_CATEGORY_ID -> "Favoritos"
+            RECENTS_CATEGORY_ID -> "Recentes"
+            else -> ""
+        }
+    )
 
     val uiState: StateFlow<StreamUiState> = combine(
-        _streams,
-        _searchQuery,
-        _favoriteIds,
-        _isLoading,
-        _error
-    ) { streams, query, favIds, loading, error ->
+        combine(_streams, _searchQuery, _favoriteIds) { streams, query, favIds ->
+            Triple(streams, query, favIds)
+        },
+        combine(_isLoading, _error, _categoryName) { loading, error, catName ->
+            Triple(loading, error, catName)
+        }
+    ) { (streams, query, favIds), (loading, error, catName) ->
         val filtered = if (query.isBlank()) streams else streams.filter { it.name.contains(query, ignoreCase = true) }
         StreamUiState(
             streams = filtered,
             isLoading = loading,
             error = error,
             favoriteIds = favIds,
-            searchQuery = query
+            searchQuery = query,
+            categoryName = catName
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StreamUiState())
 
     init {
+        android.util.Log.d("StreamViewModel", "INIT: categoryId='$categoryId', type=$type, isSpecialCategory=$isSpecialCategory")
         loadStreams()
         observeFavorites()
+        observeCategoryName()
     }
 
     private fun loadStreams() {
@@ -106,11 +120,11 @@ class StreamViewModel @Inject constructor(
                     }
                 }
                 else -> {
+                    refreshStreams()
                     getStreamsUseCase(categoryId, type).collect { streams ->
                         _streams.value = streams
                         _isLoading.value = false
                     }
-                    refreshStreams()
                 }
             }
         }
@@ -120,6 +134,17 @@ class StreamViewModel @Inject constructor(
         viewModelScope.launch {
             favoritesRepository.getFavoritesByType(type).collect { favs ->
                 _favoriteIds.value = favs.map { it.streamId }.toSet()
+            }
+        }
+    }
+
+    private fun observeCategoryName() {
+        if (!isSpecialCategory) {
+            viewModelScope.launch {
+                getCategoriesUseCase(type).collect { categories ->
+                    val found = categories.find { it.id == categoryId }
+                    if (found != null) _categoryName.value = found.name
+                }
             }
         }
     }

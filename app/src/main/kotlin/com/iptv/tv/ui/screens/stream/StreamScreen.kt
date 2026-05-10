@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -11,9 +12,12 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.CircularProgressIndicator
+import kotlinx.coroutines.delay
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import com.iptv.tv.domain.model.ContentType
 import com.iptv.tv.domain.model.Stream
 import com.iptv.tv.ui.components.LiveChannelCard
@@ -31,9 +35,28 @@ fun StreamScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val firstItemFocus = remember { FocusRequester() }
+    val searchFieldFocus = remember { FocusRequester() }
+    var searchVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        firstItemFocus.requestFocus()
+        delay(300)
+        if (uiState.streams.isNotEmpty()) {
+            try { firstItemFocus.requestFocus() } catch (_: Exception) { }
+        }
+    }
+
+    LaunchedEffect(uiState.streams.isNotEmpty()) {
+        if (uiState.streams.isNotEmpty()) {
+            delay(100)
+            try { firstItemFocus.requestFocus() } catch (_: Exception) { }
+        }
+    }
+
+    LaunchedEffect(searchVisible) {
+        if (searchVisible) {
+            delay(100)
+            try { searchFieldFocus.requestFocus() } catch (_: Exception) { }
+        }
     }
 
     Column(
@@ -41,12 +64,55 @@ fun StreamScreen(
             .fillMaxSize()
             .padding(horizontal = 48.dp, vertical = 24.dp)
     ) {
-        TvSearchField(
-            value = uiState.searchQuery,
-            onValueChange = viewModel::onSearchChange,
-            placeholder = "Buscar streams...",
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = uiState.categoryName,
+                style = MaterialTheme.typography.headlineMedium
+            )
+            Surface(
+                onClick = { searchVisible = true },
+                modifier = Modifier.size(48.dp),
+                colors = ClickableSurfaceDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    focusedContainerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                    pressedContainerColor = MaterialTheme.colorScheme.primary,
+                    pressedContentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Buscar",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+        }
+
+        if (searchVisible) {
+            TvSearchField(
+                value = uiState.searchQuery,
+                onValueChange = viewModel::onSearchChange,
+                placeholder = "Buscar streams...",
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                focusRequester = searchFieldFocus,
+                onBack = {
+                    searchVisible = false
+                    viewModel.onSearchChange("")
+                    firstItemFocus.requestFocus()
+                },
+                onSearch = { searchVisible = false }
+            )
+        }
 
         when {
             uiState.isLoading -> {
@@ -117,6 +183,8 @@ fun StreamScreen(
                                                 stream.lastEpisodeTitle ?: stream.name,
                                                 -1L
                                             )
+                                        } else if (stream.type == ContentType.SERIES) {
+                                            onStreamSelected(stream)
                                         } else {
                                             viewModel.recordToHistory(stream)
                                             onStreamSelected(stream)

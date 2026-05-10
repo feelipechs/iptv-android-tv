@@ -3,15 +3,18 @@ package com.iptv.tv.ui.screens.category
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -32,9 +35,19 @@ fun CategoryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val firstItemFocus = remember { FocusRequester() }
+    val searchFieldFocus = remember { FocusRequester() }
+    var searchVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
+        delay(300)
         firstItemFocus.requestFocus()
+    }
+
+    LaunchedEffect(searchVisible) {
+        if (searchVisible) {
+            delay(100)
+            try { searchFieldFocus.requestFocus() } catch (_: Exception) { }
+        }
     }
 
     Column(
@@ -42,22 +55,59 @@ fun CategoryScreen(
             .fillMaxSize()
             .padding(horizontal = 48.dp, vertical = 24.dp)
     ) {
-        Text(
-            text = when (type) {
-                ContentType.LIVE -> "TV ao Vivo"
-                ContentType.VOD -> "Filmes"
-                ContentType.SERIES -> "Séries"
-            },
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = when (type) {
+                    ContentType.LIVE -> "TV ao Vivo"
+                    ContentType.VOD -> "Filmes"
+                    ContentType.SERIES -> "Séries"
+                },
+                style = MaterialTheme.typography.headlineMedium
+            )
+            Surface(
+                onClick = { searchVisible = true },
+                modifier = Modifier.size(48.dp),
+                colors = ClickableSurfaceDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    focusedContainerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                    pressedContainerColor = MaterialTheme.colorScheme.primary,
+                    pressedContentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Buscar",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+        }
 
-        TvSearchField(
-            value = uiState.categorySearch,
-            onValueChange = viewModel::onCategorySearchChange,
-            placeholder = "Buscar categorias...",
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
-        )
+        if (searchVisible) {
+            TvSearchField(
+                value = uiState.categorySearch,
+                onValueChange = viewModel::onCategorySearchChange,
+                placeholder = "Buscar categorias...",
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                focusRequester = searchFieldFocus,
+                onBack = {
+                    searchVisible = false
+                    viewModel.onCategorySearchChange("")
+                    firstItemFocus.requestFocus()
+                },
+                onSearch = { searchVisible = false }
+            )
+        }
 
         when {
             uiState.isLoading -> {
@@ -79,9 +129,11 @@ fun CategoryScreen(
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary,
                                 focusedContainerColor = MaterialTheme.colorScheme.primary,
-                                focusedContentColor = MaterialTheme.colorScheme.onPrimary
+                                focusedContentColor = MaterialTheme.colorScheme.onPrimary,
+                                pressedContainerColor = MaterialTheme.colorScheme.primary,
+                                pressedContentColor = MaterialTheme.colorScheme.onPrimary
                             ),
-                            shape = ClickableSurfaceDefaults.shape(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp))
                         ) {
                             Text("Tentar novamente", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                         }

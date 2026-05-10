@@ -119,10 +119,12 @@ class SeriesDetailViewModel @Inject constructor(
             episodeStreamUrls = urlMap,
             isLoading = false
         )
+        android.util.Log.d("SeriesDetail", "Número de temporadas na API: ${response.episodes?.size ?: 0}")
+        android.util.Log.d("SeriesDetail", "Chaves do mapa de episódios: ${response.episodes?.keys}")
+        response.episodes?.forEach { (seasonKey, eps) ->
+            android.util.Log.d("SeriesDetail", "  Temporada '$seasonKey': ${eps.size} episódios")
+        }
         android.util.Log.d("SeriesDetail", "Temporada selecionada: $selectedSeason")
-        android.util.Log.d("SeriesDetail", "Episódios nessa temporada: ${response.episodes?.get(selectedSeason)?.size}")
-        android.util.Log.d("SeriesDetail", "Todas as chaves: ${response.episodes?.keys}")
-        android.util.Log.d("SeriesDetail", "episodesForSelectedSeason size: ${(response.episodes?.get(selectedSeason) ?: emptyList()).size}")
         }.onFailure { e ->
             _uiState.value = _uiState.value.copy(
                 isLoading = false,

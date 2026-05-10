@@ -66,7 +66,8 @@ fun PlayerScreen(
 
     LaunchedEffect(showControls, autoHideKey) {
         if (showControls) {
-            delay(5000)
+            val hideDelay = if (streamType == ContentType.LIVE) 3000L else 5000L
+            delay(hideDelay)
             showControls = false
         }
     }
@@ -95,13 +96,13 @@ fun PlayerScreen(
 keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter -> {
                     if (state.error != null) return@onKeyEvent false
                     if (!showControls) {
-                            showControls = true
-                            autoHideKey = System.currentTimeMillis()
-                        } else {
-                            autoHideKey = System.currentTimeMillis()
-                        }
+                        showControls = true
+                        autoHideKey = System.currentTimeMillis()
                         true
+                    } else {
+                        false
                     }
+                }
                     keyEvent.key == Key.Back -> {
                         if (showControls) {
                             showControls = false
@@ -200,47 +201,58 @@ AndroidView(
             }
         }
 
-if (showControls) {
-        if (streamName.isNotBlank()) {
-            Text(
-                text = streamName,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.background.copy(alpha = 0.5f),
-                        shape = RoundedCornerShape(4.dp)
-                    )
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
-        PlayerControlsOverlay(
-                isPlaying = state.isPlaying,
-                currentPosition = state.currentPosition,
-                duration = state.duration,
-                onPlayPause = {
-                    viewModel.togglePlayPause()
-                    autoHideKey = System.currentTimeMillis()
-                },
-                onSeekForward = {
-                    val newPos = (state.currentPosition + 10_000L).coerceAtMost(state.duration)
-                    viewModel.seekTo(newPos)
-                    autoHideKey = System.currentTimeMillis()
-                },
-                onSeekBackward = {
-                    val newPos = (state.currentPosition - 10_000L).coerceAtLeast(0L)
-                    viewModel.seekTo(newPos)
-                    autoHideKey = System.currentTimeMillis()
-                },
-                onBack = {
-                    showControls = false
-                    rootFocusRequester.requestFocus()
-                },
-                controlsFocusRequester = controlsFocusRequester,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
+        if (showControls) {
+            if (streamName.isNotBlank()) {
+                Text(
+                    text = streamName,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(16.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.background.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+            if (streamType == ContentType.LIVE) {
+                LiveOverlayControls(
+                    onBack = {
+                        showControls = false
+                        rootFocusRequester.requestFocus()
+                    },
+                    controlsFocusRequester = controlsFocusRequester,
+                    modifier = Modifier.align(Alignment.BottomEnd)
+                )
+            } else {
+                PlayerControlsOverlay(
+                    isPlaying = state.isPlaying,
+                    currentPosition = state.currentPosition,
+                    duration = state.duration,
+                    onPlayPause = {
+                        viewModel.togglePlayPause()
+                        autoHideKey = System.currentTimeMillis()
+                    },
+                    onSeekForward = {
+                        val newPos = (state.currentPosition + 10_000L).coerceAtMost(state.duration)
+                        viewModel.seekTo(newPos)
+                        autoHideKey = System.currentTimeMillis()
+                    },
+                    onSeekBackward = {
+                        val newPos = (state.currentPosition - 10_000L).coerceAtLeast(0L)
+                        viewModel.seekTo(newPos)
+                        autoHideKey = System.currentTimeMillis()
+                    },
+                    onBack = {
+                        showControls = false
+                        rootFocusRequester.requestFocus()
+                    },
+                    controlsFocusRequester = controlsFocusRequester,
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
+            }
         }
     }
 }
@@ -314,6 +326,29 @@ private fun PlayerControlsOverlay(
       )
     }
   }
+}
+
+@Composable
+private fun LiveOverlayControls(
+    onBack: () -> Unit,
+    controlsFocusRequester: FocusRequester,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .padding(24.dp)
+            .focusGroup(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        PlayerControlButton(
+            onClick = onBack,
+            icon = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = "Fechar",
+            modifier = Modifier
+                .focusRequester(controlsFocusRequester)
+                .size(56.dp)
+        )
+    }
 }
 
 @Composable

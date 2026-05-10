@@ -14,8 +14,14 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -29,21 +35,15 @@ fun TvSearchField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String = "Buscar...",
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    focusRequester: FocusRequester? = null,
+    onBack: (() -> Unit)? = null,
+    onSearch: (() -> Unit)? = null
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
-    val focusRequester = remember { FocusRequester() }
-
-    LaunchedEffect(isFocused) {
-        if (isFocused) {
-            keyboardController?.show()
-        } else {
-            keyboardController?.hide()
-        }
-    }
 
     Box(
         modifier = modifier
@@ -70,12 +70,18 @@ fun TvSearchField(
                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
             Spacer(modifier = Modifier.width(12.dp))
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier
-                    .weight(1f)
-                    .focusRequester(focusRequester),
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier
+                .weight(1f)
+                .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+                .then(if (onBack != null) Modifier.onKeyEvent { keyEvent ->
+                    if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Back) {
+                        onBack()
+                        true
+                    } else false
+                } else Modifier),
                 singleLine = true,
                 interactionSource = interactionSource,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
@@ -83,11 +89,12 @@ fun TvSearchField(
                 ),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(
-                    onSearch = {
-                        keyboardController?.hide()
-                        focusManager.clearFocus()
-                    }
+            keyboardActions = KeyboardActions(
+                onSearch = {
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                    onSearch?.invoke()
+                }
                 ),
                 decorationBox = { innerTextField ->
                     Box(
