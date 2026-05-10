@@ -186,6 +186,9 @@ private class DelegatingContentRepository(
     override fun getStreams(categoryId: String, type: com.iptv.tv.domain.model.ContentType) =
         delegate.getStreams(categoryId, type)
 
+    override fun getStreamsByType(type: com.iptv.tv.domain.model.ContentType) =
+        delegate.getStreamsByType(type)
+
     override fun getStreamCountsByType(type: com.iptv.tv.domain.model.ContentType) =
         delegate.getStreamCountsByType(type)
 

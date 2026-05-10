@@ -47,6 +47,11 @@ class M3uContentRepository @Inject constructor(
             entities.map { it.toDomain() }
         }
 
+    override fun getStreamsByType(type: ContentType): Flow<List<Stream>> =
+        streamDao.getStreamsByType(type).map { entities ->
+            entities.map { it.toDomain() }
+        }
+
     override fun getStreamCountsByType(type: ContentType): Flow<Map<String, Int>> =
         streamDao.getStreamCountsByType(type).map { list ->
             list.associate { it.categoryId to it.count }

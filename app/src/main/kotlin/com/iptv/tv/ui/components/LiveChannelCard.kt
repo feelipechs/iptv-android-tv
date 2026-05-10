@@ -29,7 +29,7 @@ fun LiveChannelCard(
 
     Row(
         modifier = modifier
-            .width(180.dp)
+            .fillMaxWidth()
             .height(72.dp)
             .clip(RoundedCornerShape(8.dp))
             .border(

@@ -3,6 +3,7 @@ package com.iptv.tv.ui.screens.login
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
@@ -13,11 +14,14 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.iptv.tv.R
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.*
 import com.iptv.tv.domain.model.ProviderType
@@ -33,6 +37,31 @@ fun LoginScreen(
 
     LaunchedEffect(state.isLoggedIn) {
         if (state.isLoggedIn) onLoginSuccess()
+    }
+
+    if (state.isLoading && !state.isLoggedIn && !state.isAlreadyLoggedIn) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                CircularProgressIndicator()
+                Text(
+                    text = "Carregando conteúdo...",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Isso pode levar alguns minutos no primeiro acesso",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+            }
+        }
+        return
     }
 
     val focusManager = LocalFocusManager.current
@@ -91,10 +120,11 @@ fun LoginScreen(
                 }
             }
 
-            Text(
-                text = "IPTV Player",
-                style = MaterialTheme.typography.headlineLarge
-            )
+        Image(
+            painter = painterResource(id = R.drawable.ic_app_logo),
+            contentDescription = "KotlinTV",
+            modifier = Modifier.size(96.dp)
+        )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -205,7 +235,7 @@ fun LoginScreen(
                             text = "ou",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp)
                         )
                     }
 

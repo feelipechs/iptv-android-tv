@@ -16,6 +16,9 @@ interface ContentRepository {
     /** Retorna streams de uma categoria */
     fun getStreams(categoryId: String, type: ContentType): Flow<List<Stream>>
 
+    /** Retorna todos os streams de um tipo */
+    fun getStreamsByType(type: ContentType): Flow<List<Stream>>
+
     /** Retorna contagem de streams por categoria */
     fun getStreamCountsByType(type: ContentType): Flow<Map<String, Int>>
 

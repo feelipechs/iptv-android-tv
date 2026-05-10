@@ -149,6 +149,10 @@ class SeriesDetailViewModel @Inject constructor(
 
     fun addToHistory(s: Stream, episode: Episode, season: String) {
         viewModelScope.launch {
+        val existing = watchHistoryRepository.getHistoryEntry(s.id)
+        if (existing != null && existing.lastSeason == season && existing.lastEpisodeNum == episode.episodeNum.toIntOrNull()) {
+            return@launch
+        }
             val epUrl = getEpisodeStreamUrl(episode)
             watchHistoryRepository.addToHistory(
                 stream = s,

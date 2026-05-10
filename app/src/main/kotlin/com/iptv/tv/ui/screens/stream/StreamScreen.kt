@@ -29,7 +29,7 @@ fun StreamScreen(
     categoryId: String,
     type: ContentType,
     onStreamSelected: (Stream) -> Unit,
-    onPlayEpisode: (String, String, String, Long) -> Unit,
+    onPlayEpisode: (String, String, String, Long, String) -> Unit,
     onBack: () -> Unit,
     viewModel: StreamViewModel = hiltViewModel()
 ) {
@@ -138,11 +138,11 @@ fun StreamScreen(
             }
             else -> {
                 when (type) {
-                    ContentType.LIVE -> {
-                        LazyVerticalGrid(
-                            columns = GridCells.Adaptive(minSize = 180.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+            ContentType.LIVE -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(1),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
                             itemsIndexed(uiState.streams, key = { _, stream -> stream.id }) { index, stream ->
@@ -177,12 +177,13 @@ fun StreamScreen(
                                         if (isSeriesEpisode) {
                                             val episodeUrl = stream.lastEpisodeUrl ?: return@PosterCard
                                             val episodeId = extractEpisodeIdFromUrl(episodeUrl)
-                                            onPlayEpisode(
-                                                episodeId,
-                                                episodeUrl,
-                                                stream.lastEpisodeTitle ?: stream.name,
-                                                -1L
-                                            )
+                    onPlayEpisode(
+                        episodeId,
+                        episodeUrl,
+                        stream.lastEpisodeTitle ?: stream.name,
+                        -1L,
+                        stream.id
+                    )
                                         } else if (stream.type == ContentType.SERIES) {
                                             onStreamSelected(stream)
                                         } else {

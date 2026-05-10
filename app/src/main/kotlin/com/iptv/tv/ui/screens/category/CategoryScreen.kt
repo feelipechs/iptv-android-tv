@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -168,6 +169,15 @@ fun CategoryScreen(
                         Spacer(Modifier.height(8.dp))
                         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
                         Spacer(Modifier.height(8.dp))
+                    }
+                    item {
+                        CategoryItem(
+                            name = "Todos",
+                            streamCount = uiState.totalStreamCount,
+                            isSelected = false,
+                            onClick = { onNavigateToStream(com.iptv.tv.ui.screens.home.ALL_CATEGORY_ID) },
+                            icon = Icons.Filled.Apps
+                        )
                     }
 
                     items(viewModel.filteredCategories) { category ->

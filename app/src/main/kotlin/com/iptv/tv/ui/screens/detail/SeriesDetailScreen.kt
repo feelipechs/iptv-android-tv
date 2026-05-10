@@ -61,7 +61,7 @@ import androidx.compose.ui.focus.onFocusChanged
 @Composable
 fun SeriesDetailScreen(
     stream: Stream,
-    onPlayEpisode: (String, String, String, Long) -> Unit,
+    onPlayEpisode: (String, String, String, Long, String) -> Unit,
     viewModel: SeriesDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -140,7 +140,7 @@ val isResume = uiState.lastEpisodeUrl != null
                                     if (stream.name.isNotBlank() && stream.id.isNotBlank()) {
                                         viewModel.addToHistory(stream, episode, season)
                                     }
-                                    resumeUrl?.let { url -> onPlayEpisode(episode.id, url, episode.title ?: stream.name, -1L) }
+                                    resumeUrl?.let { url -> onPlayEpisode(episode.id, url, episode.title ?: stream.name, -1L, stream.id) }
                                 }
                             },
                             uiState = uiState
@@ -184,12 +184,12 @@ val isResume = uiState.lastEpisodeUrl != null
                                 if (stream.name.isNotBlank() && stream.id.isNotBlank()) {
                                     viewModel.addToHistory(stream, episode, uiState.selectedSeason)
                                 }
-                onPlayEpisode(
-                    episode.id,
-                    epUrl,
-                    episode.title ?: "Episódio ${episode.episodeNum}",
-                    if (epProgress > 0.05f) -1L else 0L
-                )
+            onPlayEpisode(
+                episode.id, epUrl,
+                episode.title ?: "Episódio ${episode.episodeNum}",
+                if (epProgress > 0.05f) -1L else 0L,
+                stream.id
+            )
                             },
                             modifier = Modifier
                         )

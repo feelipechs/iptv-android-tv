@@ -32,6 +32,7 @@ class PlayerViewModel @Inject constructor(
         ContentType.valueOf(URLDecoder.decode(savedStateHandle["streamType"] ?: "LIVE", "UTF-8"))
     } catch (e: Exception) { ContentType.LIVE }
     private val startPosition: Long = savedStateHandle["startPosition"] ?: 0L
+    private val seriesId: String = URLDecoder.decode(savedStateHandle["seriesId"] ?: "", "UTF-8")
 
     val playerState: StateFlow<PlayerState> = playerManager.state
     val player get() = playerManager.player
@@ -50,8 +51,9 @@ class PlayerViewModel @Inject constructor(
     }
 
     private suspend fun resumeFromHistory() {
-        if (streamId.isBlank()) return
-        val entry = watchHistoryRepository.getHistoryEntry(streamId) ?: return
+        val historyLookupId = if (streamType == ContentType.SERIES && seriesId.isNotBlank()) seriesId else streamId
+        if (historyLookupId.isBlank()) return
+        val entry = watchHistoryRepository.getHistoryEntry(historyLookupId) ?: return
         if (entry.progress <= 0f) return
         for (i in 1..30) {
             val dur = playerManager.state.value.duration
@@ -75,8 +77,9 @@ class PlayerViewModel @Inject constructor(
             val pos = currentPosition
             val dur = duration
             val progress = if (dur > 0L) pos.toFloat() / dur.toFloat() else 0f
+            val historyId = if (streamType == ContentType.SERIES && seriesId.isNotBlank()) seriesId else streamId
             val stream = Stream(
-                id = streamId,
+                id = historyId,
                 name = streamName,
                 categoryId = "",
                 type = streamType,

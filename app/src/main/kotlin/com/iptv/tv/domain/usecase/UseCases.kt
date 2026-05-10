@@ -27,6 +27,13 @@ class GetStreamsUseCase @Inject constructor(
         repository.getStreams(categoryId, type)
 }
 
+class GetAllStreamsUseCase @Inject constructor(
+    private val repository: ContentRepository
+) {
+    operator fun invoke(type: ContentType): Flow<List<Stream>> =
+        repository.getStreamsByType(type)
+}
+
 class RefreshContentUseCase @Inject constructor(
     private val repository: ContentRepository
 ) {

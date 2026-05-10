@@ -39,8 +39,8 @@ sealed class Screen(val route: String) {
             return "stream/$encodedCategoryId/${type.name}"
         }
     }
-    data object Player : Screen("player/{streamId}/{streamUrl}/{streamName}/{streamType}/{startPosition}") {
-        fun route(streamId: String, encodedUrl: String, encodedName: String, encodedStreamType: String, startPosition: Long = 0L) = "player/$streamId/$encodedUrl/$encodedName/$encodedStreamType/$startPosition"
+    data object Player : Screen("player/{streamId}/{streamUrl}/{streamName}/{streamType}/{startPosition}/{seriesId}") {
+        fun route(streamId: String, encodedUrl: String, encodedName: String, encodedStreamType: String, startPosition: Long = 0L, seriesId: String = "") = "player/$streamId/$encodedUrl/$encodedName/$encodedStreamType/$startPosition/$seriesId"
     }
     data object Detail : Screen("detail/{streamId}/{streamUrl}/{streamName}/{posterUrl}/{categoryId}/{contentType}") {
         fun route(
@@ -177,30 +177,32 @@ fun IPTVNavHost() {
                         }
                     }
                 },
-                onPlayEpisode = { episodeId, episodeUrl, episodeName, startPosition ->
-                    navController.navigate(
-                        Screen.Player.route(
-                            episodeId.encodeUrl(),
-                            episodeUrl.encodeUrl(),
-                            episodeName.encodeUrl(),
-                            ContentType.SERIES.name.encodeUrl(),
-                            startPosition
-                        )
+        onPlayEpisode = { episodeId, episodeUrl, episodeName, startPosition, seriesId ->
+                navController.navigate(
+                    Screen.Player.route(
+                        episodeId.encodeUrl(),
+                        episodeUrl.encodeUrl(),
+                        episodeName.encodeUrl(),
+                        ContentType.SERIES.name.encodeUrl(),
+                        startPosition,
+                        seriesId.encodeUrl()
                     )
-                },
-                onBack = { navController.popBackStack() }
-            )
-        }
+                )
+            },
+            onBack = { navController.popBackStack() }
+        )
+    }
 
-        composable(
-            route = Screen.Player.route,
-            arguments = listOf(
-                navArgument("streamId") { type = NavType.StringType },
-                navArgument("streamUrl") { type = NavType.StringType },
-                navArgument("streamName") { type = NavType.StringType },
-                navArgument("streamType") { type = NavType.StringType; defaultValue = "LIVE" },
-                navArgument("startPosition") { type = NavType.LongType; defaultValue = 0L }
-            )
+    composable(
+        route = Screen.Player.route,
+        arguments = listOf(
+            navArgument("streamId") { type = NavType.StringType },
+            navArgument("streamUrl") { type = NavType.StringType },
+            navArgument("streamName") { type = NavType.StringType },
+            navArgument("streamType") { type = NavType.StringType; defaultValue = "LIVE" },
+            navArgument("startPosition") { type = NavType.LongType; defaultValue = 0L },
+            navArgument("seriesId") { type = NavType.StringType; defaultValue = "" }
+        )
         ) { backStack ->
             val args = backStack.arguments
             val streamId = args?.getString("streamId")?.decodeUrl() ?: ""
@@ -208,14 +210,16 @@ fun IPTVNavHost() {
             val streamName = args?.getString("streamName")?.decodeUrl() ?: ""
             val streamTypeStr = args?.getString("streamType") ?: "LIVE"
             val startPosition = args?.getLong("startPosition") ?: 0L
-            val streamType = try { ContentType.valueOf(streamTypeStr) } catch (_: Exception) { ContentType.LIVE }
-            PlayerScreen(
-                streamId = streamId,
-                streamUrl = streamUrl,
-                streamName = streamName,
-                streamType = streamType,
-                startPosition = startPosition,
-                onBack = { navController.popBackStack() }
+        val streamType = try { ContentType.valueOf(streamTypeStr) } catch (_: Exception) { ContentType.LIVE }
+        val seriesId = args?.getString("seriesId")?.decodeUrl() ?: ""
+        PlayerScreen(
+            streamId = streamId,
+            streamUrl = streamUrl,
+            streamName = streamName,
+            streamType = streamType,
+            startPosition = startPosition,
+            seriesId = seriesId,
+            onBack = { navController.popBackStack() }
             )
         }
 
@@ -292,17 +296,18 @@ fun IPTVNavHost() {
 
             SeriesDetailScreen(
                 stream = stream,
-                onPlayEpisode = { episodeId, episodeUrl, episodeName, startPosition ->
-                    navController.navigate(
-                        Screen.Player.route(
-                            episodeId.encodeUrl(),
-                            episodeUrl.encodeUrl(),
-                            episodeName.encodeUrl(),
-                            ContentType.SERIES.name.encodeUrl(),
-                            startPosition
-                        )
+        onPlayEpisode = { episodeId, episodeUrl, episodeName, startPosition, seriesId ->
+                navController.navigate(
+                    Screen.Player.route(
+                        episodeId.encodeUrl(),
+                        episodeUrl.encodeUrl(),
+                        episodeName.encodeUrl(),
+                        ContentType.SERIES.name.encodeUrl(),
+                        startPosition,
+                        seriesId.encodeUrl()
                     )
-                }
+                )
+            }
             )
         }
 

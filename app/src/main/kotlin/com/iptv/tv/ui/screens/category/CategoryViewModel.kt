@@ -21,7 +21,9 @@ data class CategoryUiState(
     val categories: List<Category> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val categorySearch: String = ""
+    val categorySearch: String = "",
+    val streamCounts: Map<String, Int> = emptyMap(),
+    val totalStreamCount: Int = 0
 )
 
 @HiltViewModel
@@ -39,11 +41,24 @@ class CategoryViewModel @Inject constructor(
     val uiState: StateFlow<CategoryUiState> = _uiState.asStateFlow()
 
     val filteredCategories: List<Category>
-        get() = if (_uiState.value.categorySearch.isBlank()) _uiState.value.categories
-        else _uiState.value.categories.filter { it.name.contains(_uiState.value.categorySearch, ignoreCase = true) }
+        get() = if (_uiState.value.categorySearch.isBlank()) {
+            _uiState.value.categories.map { category -> category.copy(streamCount = _uiState.value.streamCounts[category.id] ?: 0) }
+        } else {
+            _uiState.value.categories.filter { it.name.contains(_uiState.value.categorySearch, ignoreCase = true) }.map { category -> category.copy(streamCount = _uiState.value.streamCounts[category.id] ?: 0) }
+        }
 
     init {
         loadCategories()
+        loadStreamCounts()
+    }
+
+    private fun loadStreamCounts() {
+        viewModelScope.launch {
+            getCategoriesUseCase.getStreamCountsByType(type).collect { counts ->
+                val totalStreamCount = counts.entries.sumOf { it.value }
+                _uiState.value = _uiState.value.copy(streamCounts = counts, totalStreamCount = totalStreamCount)
+            }
+        }
     }
 
     private fun loadCategories() {

@@ -9,11 +9,13 @@ import com.iptv.tv.domain.model.Stream
 import com.iptv.tv.domain.model.WatchHistoryEntry
 import com.iptv.tv.domain.repository.FavoritesRepository
 import com.iptv.tv.domain.repository.WatchHistoryRepository
+import com.iptv.tv.domain.usecase.GetAllStreamsUseCase
 import com.iptv.tv.domain.usecase.GetStreamsUseCase
 import com.iptv.tv.domain.usecase.GetCategoriesUseCase
 import com.iptv.tv.domain.usecase.RefreshStreamsUseCase
 import com.iptv.tv.ui.screens.home.FAVORITES_CATEGORY_ID
 import com.iptv.tv.ui.screens.home.RECENTS_CATEGORY_ID
+import com.iptv.tv.ui.screens.home.ALL_CATEGORY_ID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,6 +39,7 @@ data class StreamUiState(
 class StreamViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getStreamsUseCase: GetStreamsUseCase,
+    private val getAllStreamsUseCase: GetAllStreamsUseCase,
     private val refreshStreamsUseCase: RefreshStreamsUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val favoritesRepository: FavoritesRepository,
@@ -51,7 +54,7 @@ class StreamViewModel @Inject constructor(
         ContentType.valueOf(savedStateHandle.get<String>("type") ?: "LIVE")
     } catch (_: Exception) { ContentType.LIVE }
 
-    private val isSpecialCategory = categoryId == FAVORITES_CATEGORY_ID || categoryId == RECENTS_CATEGORY_ID
+    private val isSpecialCategory = categoryId == FAVORITES_CATEGORY_ID || categoryId == RECENTS_CATEGORY_ID || categoryId == ALL_CATEGORY_ID
 
     private val _searchQuery = MutableStateFlow("")
     private val _favoriteIds = MutableStateFlow<Set<String>>(emptySet())
@@ -62,6 +65,7 @@ class StreamViewModel @Inject constructor(
         when (categoryId) {
             FAVORITES_CATEGORY_ID -> "Favoritos"
             RECENTS_CATEGORY_ID -> "Recentes"
+            ALL_CATEGORY_ID -> "Todos"
             else -> ""
         }
     )
@@ -116,6 +120,12 @@ class StreamViewModel @Inject constructor(
                                 lastEpisodeUrl = entry.lastEpisodeUrl
                             )
                         }
+                        _isLoading.value = false
+                    }
+                }
+                ALL_CATEGORY_ID -> {
+                    getAllStreamsUseCase(type).collect { streams ->
+                        _streams.value = streams
                         _isLoading.value = false
                     }
                 }

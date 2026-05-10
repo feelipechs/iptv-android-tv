@@ -1,5 +1,6 @@
 package com.iptv.tv.ui.screens.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -11,16 +12,21 @@ import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.*
+import com.iptv.tv.BuildConfig
+import com.iptv.tv.R
 import com.iptv.tv.domain.model.ContentType
 
 @Composable
@@ -28,6 +34,8 @@ fun HomeScreen(
     onNavigateToCategory: (ContentType) -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
+    val activity = LocalContext.current as? android.app.Activity
+    BackHandler { activity?.moveTaskToBack(true) }
     val firstCardFocus = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
@@ -37,39 +45,25 @@ fun HomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentAlignment = Alignment.Center
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(48.dp)
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(24.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "IPTV",
-                style = MaterialTheme.typography.displayLarge
+            Image(
+                painter = painterResource(id = R.drawable.ic_app_logo),
+                contentDescription = "KotlinTV",
+                modifier = Modifier.size(48.dp)
             )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                HomeCard(
-                    title = "TV ao Vivo",
-                    icon = Icons.Filled.Tv,
-                    onClick = { onNavigateToCategory(ContentType.LIVE) },
-                    modifier = Modifier.focusRequester(firstCardFocus)
-                )
-                HomeCard(
-                    title = "Filmes",
-                    icon = Icons.Filled.Movie,
-                    onClick = { onNavigateToCategory(ContentType.VOD) }
-                )
-                HomeCard(
-                    title = "Séries",
-                    icon = Icons.Filled.VideoLibrary,
-                    onClick = { onNavigateToCategory(ContentType.SERIES) }
-                )
-            }
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = "KotlinTV",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
         }
 
         Surface(
@@ -98,6 +92,47 @@ fun HomeScreen(
                 )
             }
         }
+
+        Row(
+            modifier = Modifier.align(Alignment.Center),
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            HomeCard(
+                title = "TV ao Vivo",
+                icon = Icons.Filled.Tv,
+                onClick = { onNavigateToCategory(ContentType.LIVE) },
+                modifier = Modifier.focusRequester(firstCardFocus)
+            )
+            HomeCard(
+                title = "Filmes",
+                icon = Icons.Filled.Movie,
+                onClick = { onNavigateToCategory(ContentType.VOD) }
+            )
+            HomeCard(
+                title = "Séries",
+                icon = Icons.Filled.VideoLibrary,
+                onClick = { onNavigateToCategory(ContentType.SERIES) }
+            )
+        }
+
+        Text(
+            text = "developed by chagas",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(24.dp)
+        )
+
+        Text(
+            text = "version ${BuildConfig.VERSION_NAME}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(24.dp)
+        )
     }
 }
 
