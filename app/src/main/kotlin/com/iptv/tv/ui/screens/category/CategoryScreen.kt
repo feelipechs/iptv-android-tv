@@ -138,29 +138,10 @@ fun CategoryScreen(
                 }
             }
         else -> {
-            val listState = rememberLazyListState()
-
-            LaunchedEffect(uiState.savedScrollIndex) {
-                android.util.Log.d("ScrollDebug",
-                    "CategoryScreen LaunchedEffect — savedIndex=${uiState.savedScrollIndex}, savedOffset=${uiState.savedScrollOffset}")
-                if (uiState.savedScrollIndex > 0) {
-                    listState.scrollToItem(
-                        index = uiState.savedScrollIndex,
-                        scrollOffset = uiState.savedScrollOffset
-                    )
-                }
-            }
-
-            DisposableEffect(Unit) {
-                onDispose {
-                    android.util.Log.d("ScrollDebug",
-                        "CategoryScreen onDispose — index=${listState.firstVisibleItemIndex}, offset=${listState.firstVisibleItemScrollOffset}")
-                    viewModel.saveScrollPosition(
-                        listState.firstVisibleItemIndex,
-                        listState.firstVisibleItemScrollOffset
-                    )
-                }
-            }
+            val listState = rememberLazyListState(
+                initialFirstVisibleItemIndex = uiState.savedScrollIndex,
+                initialFirstVisibleItemScrollOffset = uiState.savedScrollOffset
+            )
 
             LazyColumn(
                 state = listState,
@@ -172,17 +153,29 @@ fun CategoryScreen(
                         name = "Favoritos",
                         streamCount = 0,
                         isSelected = false,
-                        onClick = { onNavigateToStream(FAVORITES_CATEGORY_ID) },
+                        onClick = {
+                            viewModel.saveScrollPosition(
+                                listState.firstVisibleItemIndex,
+                                listState.firstVisibleItemScrollOffset
+                            )
+                            onNavigateToStream(FAVORITES_CATEGORY_ID)
+                        },
                         modifier = if (uiState.savedScrollIndex == 0) Modifier.focusRequester(firstItemFocus) else Modifier,
                         icon = Icons.Filled.Favorite
                     )
                 }
                     item {
-                        CategoryItem(
-                            name = "Recentes",
-                            streamCount = 0,
-                            isSelected = false,
-                            onClick = { onNavigateToStream(RECENTS_CATEGORY_ID) },
+                    CategoryItem(
+                        name = "Recentes",
+                        streamCount = 0,
+                        isSelected = false,
+                        onClick = {
+                            viewModel.saveScrollPosition(
+                                listState.firstVisibleItemIndex,
+                                listState.firstVisibleItemScrollOffset
+                            )
+                            onNavigateToStream(RECENTS_CATEGORY_ID)
+                        },
                             icon = Icons.Filled.History
                         )
                     }
@@ -192,23 +185,35 @@ fun CategoryScreen(
                         Spacer(Modifier.height(8.dp))
                     }
                     item {
-                        CategoryItem(
-                            name = "Todos",
-                            streamCount = uiState.totalStreamCount,
-                            isSelected = false,
-                            onClick = { onNavigateToStream(com.iptv.tv.ui.screens.home.ALL_CATEGORY_ID) },
+                    CategoryItem(
+                        name = "Todos",
+                        streamCount = uiState.totalStreamCount,
+                        isSelected = false,
+                        onClick = {
+                            viewModel.saveScrollPosition(
+                                listState.firstVisibleItemIndex,
+                                listState.firstVisibleItemScrollOffset
+                            )
+                            onNavigateToStream(com.iptv.tv.ui.screens.home.ALL_CATEGORY_ID)
+                        },
                             icon = Icons.Filled.Apps
                         )
                     }
 
-                    items(viewModel.filteredCategories) { category ->
-                        CategoryItem(
-                            name = category.name,
-                            streamCount = category.streamCount,
-                            isSelected = false,
-                            onClick = { onNavigateToStream(category.id) }
-                        )
-                    }
+                items(viewModel.filteredCategories) { category ->
+                    CategoryItem(
+                        name = category.name,
+                        streamCount = category.streamCount,
+                        isSelected = false,
+                        onClick = {
+                            viewModel.saveScrollPosition(
+                                listState.firstVisibleItemIndex,
+                                listState.firstVisibleItemScrollOffset
+                            )
+                            onNavigateToStream(category.id)
+                        }
+                    )
+                }
 
                     if (viewModel.filteredCategories.isEmpty() && uiState.categorySearch.isNotBlank()) {
                         item {

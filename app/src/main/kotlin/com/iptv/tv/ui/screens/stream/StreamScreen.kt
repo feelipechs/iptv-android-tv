@@ -39,6 +39,11 @@ fun StreamScreen(
     val searchFieldFocus = remember { FocusRequester() }
     var searchVisible by remember { mutableStateOf(false) }
 
+    val gridState = rememberLazyGridState(
+        initialFirstVisibleItemIndex = uiState.savedScrollIndex,
+        initialFirstVisibleItemScrollOffset = uiState.savedScrollOffset
+    )
+
     LaunchedEffect(searchVisible) {
         if (searchVisible) {
             delay(100)
@@ -126,30 +131,6 @@ fun StreamScreen(
             else -> {
                 when (type) {
             ContentType.LIVE -> {
-                val gridState = rememberLazyGridState()
-
-                LaunchedEffect(uiState.savedScrollIndex) {
-                    android.util.Log.d("ScrollDebug",
-                        "StreamScreen LaunchedEffect — savedIndex=${uiState.savedScrollIndex}, savedOffset=${uiState.savedScrollOffset}")
-                    if (uiState.savedScrollIndex > 0) {
-                        gridState.scrollToItem(
-                            index = uiState.savedScrollIndex,
-                            scrollOffset = uiState.savedScrollOffset
-                        )
-                    }
-                }
-
-                DisposableEffect(Unit) {
-                    onDispose {
-                        android.util.Log.d("ScrollDebug",
-                            "StreamScreen onDispose — index=${gridState.firstVisibleItemIndex}, offset=${gridState.firstVisibleItemScrollOffset}")
-                        viewModel.saveScrollPosition(
-                            gridState.firstVisibleItemIndex,
-                            gridState.firstVisibleItemScrollOffset
-                        )
-                    }
-                }
-
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(1),
                     state = gridState,
@@ -162,40 +143,19 @@ fun StreamScreen(
                                     name = stream.name,
                                     isFavorite = stream.id in uiState.favoriteIds,
                                     onFavorite = { viewModel.toggleFavorite(stream) },
-                                    onClick = {
-                                        android.util.Log.d("StreamScreen", "LIVE click: id=${stream.id}")
-                                        onStreamSelected(stream)
-                                    },
+                        onClick = {
+                            viewModel.saveScrollPosition(
+                                gridState.firstVisibleItemIndex,
+                                gridState.firstVisibleItemScrollOffset
+                            )
+                            onStreamSelected(stream)
+                        },
                                     modifier = if (index == 0) Modifier.focusRequester(firstItemFocus) else Modifier
                                 )
                             }
                         }
                     }
             else -> {
-                val gridState = rememberLazyGridState()
-
-                LaunchedEffect(uiState.savedScrollIndex) {
-                    android.util.Log.d("ScrollDebug",
-                        "StreamScreen LaunchedEffect — savedIndex=${uiState.savedScrollIndex}, savedOffset=${uiState.savedScrollOffset}")
-                    if (uiState.savedScrollIndex > 0) {
-                        gridState.scrollToItem(
-                            index = uiState.savedScrollIndex,
-                            scrollOffset = uiState.savedScrollOffset
-                        )
-                    }
-                }
-
-                DisposableEffect(Unit) {
-                    onDispose {
-                        android.util.Log.d("ScrollDebug",
-                            "StreamScreen onDispose — index=${gridState.firstVisibleItemIndex}, offset=${gridState.firstVisibleItemScrollOffset}")
-                        viewModel.saveScrollPosition(
-                            gridState.firstVisibleItemIndex,
-                            gridState.firstVisibleItemScrollOffset
-                        )
-                    }
-                }
-
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 140.dp),
                     state = gridState,
@@ -209,14 +169,17 @@ fun StreamScreen(
                             posterUrl = stream.posterUrl,
                             isFavorite = stream.id in uiState.favoriteIds,
                             onFavorite = { viewModel.toggleFavorite(stream) },
-                            onClick = {
-                                if (stream.type == ContentType.SERIES) {
-                                    android.util.Log.d("StreamScreen", "SERIES click: id=${stream.id}, url=${stream.streamUrl}, type=${stream.type}")
-                                    onStreamSelected(stream)
-                                } else {
-                                    onStreamSelected(stream)
-                                }
-                            },
+                        onClick = {
+                            viewModel.saveScrollPosition(
+                                gridState.firstVisibleItemIndex,
+                                gridState.firstVisibleItemScrollOffset
+                            )
+                            if (stream.type == ContentType.SERIES) {
+                                onStreamSelected(stream)
+                            } else {
+                                onStreamSelected(stream)
+                            }
+                        },
                                     modifier = if (index == 0) Modifier.focusRequester(firstItemFocus) else Modifier
                                 )
                             }
