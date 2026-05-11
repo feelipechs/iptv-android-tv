@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,20 +38,6 @@ fun StreamScreen(
     val firstItemFocus = remember { FocusRequester() }
     val searchFieldFocus = remember { FocusRequester() }
     var searchVisible by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        delay(300)
-        if (uiState.streams.isNotEmpty()) {
-            try { firstItemFocus.requestFocus() } catch (_: Exception) { }
-        }
-    }
-
-    LaunchedEffect(uiState.streams.isNotEmpty()) {
-        if (uiState.streams.isNotEmpty()) {
-            delay(100)
-            try { firstItemFocus.requestFocus() } catch (_: Exception) { }
-        }
-    }
 
     LaunchedEffect(searchVisible) {
         if (searchVisible) {
@@ -139,12 +126,37 @@ fun StreamScreen(
             else -> {
                 when (type) {
             ContentType.LIVE -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(1),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
+                val gridState = rememberLazyGridState()
+
+                LaunchedEffect(uiState.savedScrollIndex) {
+                    android.util.Log.d("ScrollDebug",
+                        "StreamScreen LaunchedEffect — savedIndex=${uiState.savedScrollIndex}, savedOffset=${uiState.savedScrollOffset}")
+                    if (uiState.savedScrollIndex > 0) {
+                        gridState.scrollToItem(
+                            index = uiState.savedScrollIndex,
+                            scrollOffset = uiState.savedScrollOffset
+                        )
+                    }
+                }
+
+                DisposableEffect(Unit) {
+                    onDispose {
+                        android.util.Log.d("ScrollDebug",
+                            "StreamScreen onDispose — index=${gridState.firstVisibleItemIndex}, offset=${gridState.firstVisibleItemScrollOffset}")
+                        viewModel.saveScrollPosition(
+                            gridState.firstVisibleItemIndex,
+                            gridState.firstVisibleItemScrollOffset
+                        )
+                    }
+                }
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(1),
+                    state = gridState,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
                             itemsIndexed(uiState.streams, key = { _, stream -> stream.id }) { index, stream ->
                                 LiveChannelCard(
                                     name = stream.name,
@@ -159,13 +171,38 @@ fun StreamScreen(
                             }
                         }
                     }
-                    else -> {
-                        LazyVerticalGrid(
-                            columns = GridCells.Adaptive(minSize = 140.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
+            else -> {
+                val gridState = rememberLazyGridState()
+
+                LaunchedEffect(uiState.savedScrollIndex) {
+                    android.util.Log.d("ScrollDebug",
+                        "StreamScreen LaunchedEffect — savedIndex=${uiState.savedScrollIndex}, savedOffset=${uiState.savedScrollOffset}")
+                    if (uiState.savedScrollIndex > 0) {
+                        gridState.scrollToItem(
+                            index = uiState.savedScrollIndex,
+                            scrollOffset = uiState.savedScrollOffset
+                        )
+                    }
+                }
+
+                DisposableEffect(Unit) {
+                    onDispose {
+                        android.util.Log.d("ScrollDebug",
+                            "StreamScreen onDispose — index=${gridState.firstVisibleItemIndex}, offset=${gridState.firstVisibleItemScrollOffset}")
+                        viewModel.saveScrollPosition(
+                            gridState.firstVisibleItemIndex,
+                            gridState.firstVisibleItemScrollOffset
+                        )
+                    }
+                }
+
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 140.dp),
+                    state = gridState,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
                 itemsIndexed(uiState.streams, key = { _, stream -> stream.id }) { index, stream ->
                         PosterCard(
                             name = stream.name,

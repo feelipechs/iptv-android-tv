@@ -3,6 +3,7 @@ package com.iptv.tv.ui.screens.category
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -38,11 +39,6 @@ fun CategoryScreen(
     val firstItemFocus = remember { FocusRequester() }
     val searchFieldFocus = remember { FocusRequester() }
     var searchVisible by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        delay(300)
-        firstItemFocus.requestFocus()
-    }
 
     LaunchedEffect(searchVisible) {
         if (searchVisible) {
@@ -141,21 +137,46 @@ fun CategoryScreen(
                     }
                 }
             }
-            else -> {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    item {
-                        CategoryItem(
-                            name = "Favoritos",
-                            streamCount = 0,
-                            isSelected = false,
-                            onClick = { onNavigateToStream(FAVORITES_CATEGORY_ID) },
-                            modifier = Modifier.focusRequester(firstItemFocus),
-                            icon = Icons.Filled.Favorite
-                        )
-                    }
+        else -> {
+            val listState = rememberLazyListState()
+
+            LaunchedEffect(uiState.savedScrollIndex) {
+                android.util.Log.d("ScrollDebug",
+                    "CategoryScreen LaunchedEffect — savedIndex=${uiState.savedScrollIndex}, savedOffset=${uiState.savedScrollOffset}")
+                if (uiState.savedScrollIndex > 0) {
+                    listState.scrollToItem(
+                        index = uiState.savedScrollIndex,
+                        scrollOffset = uiState.savedScrollOffset
+                    )
+                }
+            }
+
+            DisposableEffect(Unit) {
+                onDispose {
+                    android.util.Log.d("ScrollDebug",
+                        "CategoryScreen onDispose — index=${listState.firstVisibleItemIndex}, offset=${listState.firstVisibleItemScrollOffset}")
+                    viewModel.saveScrollPosition(
+                        listState.firstVisibleItemIndex,
+                        listState.firstVisibleItemScrollOffset
+                    )
+                }
+            }
+
+            LazyColumn(
+                state = listState,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                item {
+                    CategoryItem(
+                        name = "Favoritos",
+                        streamCount = 0,
+                        isSelected = false,
+                        onClick = { onNavigateToStream(FAVORITES_CATEGORY_ID) },
+                        modifier = if (uiState.savedScrollIndex == 0) Modifier.focusRequester(firstItemFocus) else Modifier,
+                        icon = Icons.Filled.Favorite
+                    )
+                }
                     item {
                         CategoryItem(
                             name = "Recentes",

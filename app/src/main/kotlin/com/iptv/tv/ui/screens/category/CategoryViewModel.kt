@@ -23,7 +23,9 @@ data class CategoryUiState(
     val error: String? = null,
     val categorySearch: String = "",
     val streamCounts: Map<String, Int> = emptyMap(),
-    val totalStreamCount: Int = 0
+    val totalStreamCount: Int = 0,
+    val savedScrollIndex: Int = 0,
+    val savedScrollOffset: Int = 0
 )
 
 @HiltViewModel
@@ -80,5 +82,12 @@ class CategoryViewModel @Inject constructor(
 
     fun onCategorySearchChange(query: String) {
         _uiState.value = _uiState.value.copy(categorySearch = query)
+    }
+
+    fun saveScrollPosition(index: Int, offset: Int) {
+        _uiState.value = _uiState.value.copy(
+            savedScrollIndex = index,
+            savedScrollOffset = offset
+        )
     }
 }

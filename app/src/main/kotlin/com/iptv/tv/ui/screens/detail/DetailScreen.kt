@@ -63,9 +63,10 @@ fun DetailScreen(
     }
 
     val playButtonFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(uiState.isLoading) {
+
+    LaunchedEffect(uiState.isLoading, uiState.savedProgress) {
         if (!uiState.isLoading) {
-            kotlinx.coroutines.delay(100)
+            delay(150)
             try { playButtonFocusRequester.requestFocus() } catch (_: Exception) {}
         }
     }

@@ -7,13 +7,15 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,11 +28,13 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.ui.PlayerView
 import androidx.tv.material3.*
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import com.iptv.tv.domain.model.ContentType
 import kotlinx.coroutines.delay
@@ -48,6 +52,8 @@ fun PlayerScreen(
     episodeNum: String = "",
     episodeTitle: String = "",
     onBack: () -> Unit,
+    onPreviousEpisode: (() -> Unit)? = null,
+    onNextEpisode: (() -> Unit)? = null,
     viewModel: PlayerViewModel = hiltViewModel()
 ) {
     val state by viewModel.playerState.collectAsStateWithLifecycle()
@@ -222,38 +228,38 @@ AndroidView(
                     style = MaterialTheme.typography.titleMedium
                 )
             }
-            if (streamType == ContentType.LIVE) {
-                LiveOverlayControls(
-                    onBack = {
-                        showControls = false
-                        rootFocusRequester.requestFocus()
-                    },
-                    controlsFocusRequester = controlsFocusRequester,
-                    modifier = Modifier.align(Alignment.BottomEnd)
-                )
-            } else {
+            if (streamType != ContentType.LIVE) {
                 PlayerControlsOverlay(
                     isPlaying = state.isPlaying,
                     currentPosition = state.currentPosition,
                     duration = state.duration,
+                    streamType = streamType,
                     onPlayPause = {
                         viewModel.togglePlayPause()
                         autoHideKey = System.currentTimeMillis()
                     },
-                    onSeekForward = {
-                        val newPos = (state.currentPosition + 10_000L).coerceAtMost(state.duration)
+                    onSeekBack30s = {
+                        val newPos = (state.currentPosition - 30_000L).coerceAtLeast(0L)
                         viewModel.seekTo(newPos)
                         autoHideKey = System.currentTimeMillis()
                     },
-                    onSeekBackward = {
-                        val newPos = (state.currentPosition - 10_000L).coerceAtLeast(0L)
+                    onSeekForward30s = {
+                        val newPos = (state.currentPosition + 30_000L).coerceAtMost(state.duration)
                         viewModel.seekTo(newPos)
                         autoHideKey = System.currentTimeMillis()
                     },
-                    onBack = {
-                        showControls = false
-                        rootFocusRequester.requestFocus()
+                    onSeekBack5min = {
+                        val newPos = (state.currentPosition - 300_000L).coerceAtLeast(0L)
+                        viewModel.seekTo(newPos)
+                        autoHideKey = System.currentTimeMillis()
                     },
+                    onSeekForward5min = {
+                        val newPos = (state.currentPosition + 300_000L).coerceAtMost(state.duration)
+                        viewModel.seekTo(newPos)
+                        autoHideKey = System.currentTimeMillis()
+                    },
+                    onPreviousEpisode = onPreviousEpisode,
+                    onNextEpisode = onNextEpisode,
                     controlsFocusRequester = controlsFocusRequester,
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )
@@ -267,43 +273,84 @@ private fun PlayerControlsOverlay(
     isPlaying: Boolean,
     currentPosition: Long,
     duration: Long,
+    streamType: ContentType,
     onPlayPause: () -> Unit,
-    onSeekForward: () -> Unit,
-    onSeekBackward: () -> Unit,
-    onBack: () -> Unit,
+    onSeekBack30s: () -> Unit,
+    onSeekForward30s: () -> Unit,
+    onSeekBack5min: () -> Unit,
+    onSeekForward5min: () -> Unit,
+    onPreviousEpisode: (() -> Unit)?,
+    onNextEpisode: (() -> Unit)?,
     controlsFocusRequester: FocusRequester,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.6f))
-            .padding(horizontal = 48.dp, vertical = 24.dp)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        Color.Black.copy(alpha = 0.85f)
+                    )
+                )
+            )
+            .padding(horizontal = 48.dp, vertical = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         SeekBar(
             currentPosition = currentPosition,
             duration = duration
         )
 
+        Spacer(Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = formatDuration(currentPosition),
+                color = Color.White.copy(alpha = 0.8f),
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                text = formatDuration(duration),
+                color = Color.White.copy(alpha = 0.8f),
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+
         Spacer(Modifier.height(16.dp))
 
         Row(
             modifier = Modifier.focusGroup(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            if (streamType == ContentType.SERIES && onPreviousEpisode != null) {
+                PlayerControlButton(
+                    onClick = onPreviousEpisode,
+                    icon = Icons.Filled.SkipPrevious,
+                    contentDescription = "Episódio anterior",
+                    modifier = Modifier.size(52.dp)
+                )
+            }
+
             PlayerControlButton(
-                onClick = onBack,
-                icon = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Voltar",
-                modifier = Modifier.size(56.dp)
+                onClick = onSeekBack5min,
+                label = "-5m",
+                icon = Icons.Filled.FastRewind,
+                contentDescription = "Recuar 5 minutos",
+                modifier = Modifier.size(52.dp)
             )
 
             PlayerControlButton(
-                onClick = onSeekBackward,
+                onClick = onSeekBack30s,
+                label = "-30s",
                 icon = Icons.Filled.FastRewind,
-                contentDescription = "Retroceder 10s",
-                modifier = Modifier.size(56.dp)
+                contentDescription = "Recuar 30 segundos",
+                modifier = Modifier.size(52.dp)
             )
 
             PlayerControlButton(
@@ -312,47 +359,37 @@ private fun PlayerControlsOverlay(
                 contentDescription = if (isPlaying) "Pausar" else "Reproduzir",
                 modifier = Modifier
                     .focusRequester(controlsFocusRequester)
-                    .size(72.dp)
+                    .size(72.dp),
+                isPrimary = true
             )
 
             PlayerControlButton(
-                onClick = onSeekForward,
+                onClick = onSeekForward30s,
+                label = "+30s",
                 icon = Icons.Filled.FastForward,
-                contentDescription = "Avançar 10s",
-                modifier = Modifier.size(56.dp)
+                contentDescription = "Avançar 30 segundos",
+                modifier = Modifier.size(52.dp)
             )
 
-            Spacer(Modifier.weight(1f))
+            PlayerControlButton(
+                onClick = onSeekForward5min,
+                label = "+5m",
+                icon = Icons.Filled.FastForward,
+                contentDescription = "Avançar 5 minutos",
+                modifier = Modifier.size(52.dp)
+            )
 
-      Text(
-        text = "${formatDuration(currentPosition)} / ${formatDuration(duration)}",
-        color = MaterialTheme.colorScheme.onBackground,
-        style = MaterialTheme.typography.bodyMedium
-      )
-    }
-  }
-}
+            if (streamType == ContentType.SERIES && onNextEpisode != null) {
+                PlayerControlButton(
+                    onClick = onNextEpisode,
+                    icon = Icons.Filled.SkipNext,
+                    contentDescription = "Próximo episódio",
+                    modifier = Modifier.size(52.dp)
+                )
+            }
+        }
 
-@Composable
-private fun LiveOverlayControls(
-    onBack: () -> Unit,
-    controlsFocusRequester: FocusRequester,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .padding(24.dp)
-            .focusGroup(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        PlayerControlButton(
-            onClick = onBack,
-            icon = Icons.AutoMirrored.Filled.ArrowBack,
-            contentDescription = "Fechar",
-            modifier = Modifier
-                .focusRequester(controlsFocusRequester)
-                .size(56.dp)
-        )
+        Spacer(Modifier.height(8.dp))
     }
 }
 
@@ -362,27 +399,44 @@ private fun SeekBar(
     duration: Long,
     modifier: Modifier = Modifier
 ) {
-    val progress = if (duration > 0L) (currentPosition.toFloat() / duration.toFloat()).coerceIn(0f, 1f) else 0f
+    val progress = if (duration > 0L)
+        (currentPosition.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+    else 0f
 
-    Row(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(4.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .height(20.dp),
+        contentAlignment = Alignment.CenterStart
     ) {
+        val trackWidth = maxWidth
+        val thumbRadius = 7.dp
+
         Box(
             modifier = Modifier
-                .weight(progress)
-                .fillMaxHeight()
+                .fillMaxWidth()
+                .height(4.dp)
+                .align(Alignment.CenterStart)
                 .clip(RoundedCornerShape(2.dp))
-                .background(MaterialTheme.colorScheme.primary)
+                .background(Color.White.copy(alpha = 0.3f))
         )
+
         Box(
             modifier = Modifier
-                .weight(1f - progress)
-                .fillMaxHeight()
+                .width(trackWidth * progress)
+                .height(4.dp)
+                .align(Alignment.CenterStart)
                 .clip(RoundedCornerShape(2.dp))
-                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
+                .background(Color.White)
+        )
+
+        Box(
+            modifier = Modifier
+                .size(thumbRadius * 2)
+                .offset(x = (trackWidth * progress) - thumbRadius)
+                .align(Alignment.CenterStart)
+                .clip(androidx.compose.foundation.shape.CircleShape)
+                .background(Color.White)
         )
     }
 }
@@ -405,40 +459,57 @@ private fun PlayerControlButton(
     onClick: () -> Unit,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     contentDescription: String?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    label: String? = null,
+    isPrimary: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
 
-  Surface(
-    onClick = onClick,
-    modifier = modifier
-      .clip(RoundedCornerShape(8.dp))
-      .border(
-        width = if (isFocused) 2.dp else 0.dp,
-        color = if (isFocused) MaterialTheme.colorScheme.primary else Color.Transparent,
-        shape = RoundedCornerShape(8.dp)
-      ),
-    colors = ClickableSurfaceDefaults.colors(
-      containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.15f),
-      focusedContainerColor = MaterialTheme.colorScheme.primary,
-      contentColor = MaterialTheme.colorScheme.onSurface,
-      focusedContentColor = MaterialTheme.colorScheme.onPrimary,
-      pressedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-      pressedContentColor = MaterialTheme.colorScheme.onPrimary
-    ),
-    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
-    interactionSource = interactionSource
-  ) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier
+            .clip(androidx.compose.foundation.shape.CircleShape)
+            .border(
+                width = if (isFocused) 2.dp else 0.dp,
+                color = if (isFocused) Color.White else Color.Transparent,
+                shape = androidx.compose.foundation.shape.CircleShape
+            ),
+        colors = ClickableSurfaceDefaults.colors(
+            containerColor = if (isPrimary)
+                Color.White.copy(alpha = 0.95f)
+            else
+                Color.White.copy(alpha = 0.15f),
+            focusedContainerColor = if (isPrimary)
+                Color.White
+            else
+                Color.White.copy(alpha = 0.35f),
+            contentColor = if (isPrimary) Color.Black else Color.White,
+            focusedContentColor = if (isPrimary) Color.Black else Color.White,
+            pressedContainerColor = Color.White.copy(alpha = 0.5f),
+            pressedContentColor = if (isPrimary) Color.Black else Color.White
+        ),
+        shape = ClickableSurfaceDefaults.shape(androidx.compose.foundation.shape.CircleShape),
+        interactionSource = interactionSource
+    ) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = contentDescription,
-                modifier = Modifier.size(28.dp)
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = contentDescription,
+                    modifier = Modifier.size(if (isPrimary) 32.dp else 22.dp)
+                )
+                if (label != null) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (isPrimary) Color.Black else Color.White
+                    )
+                }
+            }
         }
     }
 }
