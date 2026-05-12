@@ -83,7 +83,6 @@ class PlayerViewModel @Inject constructor(
             val progress = if (dur > 0L) pos.toFloat() / dur.toFloat() else 0f
             val historyId = if (streamType == ContentType.SERIES && seriesId.isNotBlank()) seriesId else streamId
         applicationScope.launch {
-            android.util.Log.d("PlayerVM", "Salvando histórico: historyId=$historyId, streamId=$streamId, type=$streamType")
             val existingEntry = watchHistoryRepository.getHistoryEntry(historyId)
             val stream = Stream(
                 id = historyId,
@@ -102,10 +101,9 @@ class PlayerViewModel @Inject constructor(
                     season = episodeSeason,
                     episodeUrl = streamUrl
                 )
-            } else {
-                watchHistoryRepository.addToHistory(stream, progress)
-            }
-            android.util.Log.d("PlayerVM", "Histórico salvo: id=${stream.id}, progress=$progress, posterUrl=${stream.posterUrl}, season=$episodeSeason, episodeNum=$episodeNum")
+        } else {
+            watchHistoryRepository.addToHistory(stream, progress)
+        }
         }
         }
         playerManager.stop()

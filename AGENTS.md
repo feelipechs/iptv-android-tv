@@ -6,7 +6,8 @@
 - Ver: .opencode/skills/xtream-api.md
 
 ## Planos
-- Ver: .opencode/bugs-fixes.md
+- Ver: .opencode/project-cleaning.md
+- Ver: .opencode/reports.md
 
 ## Modo de execução
 - Execute o plano completo em sequência sem pedir aprovação entre fases

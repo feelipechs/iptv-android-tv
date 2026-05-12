@@ -138,82 +138,63 @@ fun CategoryScreen(
                 }
             }
         else -> {
-            val listState = rememberLazyListState(
-                initialFirstVisibleItemIndex = uiState.savedScrollIndex,
-                initialFirstVisibleItemScrollOffset = uiState.savedScrollOffset
-            )
+            val listState = rememberLazyListState()
 
             LazyColumn(
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                item {
-                    CategoryItem(
-                        name = "Favoritos",
-                        streamCount = 0,
-                        isSelected = false,
-                        onClick = {
-                            viewModel.saveScrollPosition(
-                                listState.firstVisibleItemIndex,
-                                listState.firstVisibleItemScrollOffset
-                            )
-                            onNavigateToStream(FAVORITES_CATEGORY_ID)
-                        },
-                        modifier = if (uiState.savedScrollIndex == 0) Modifier.focusRequester(firstItemFocus) else Modifier,
-                        icon = Icons.Filled.Favorite
-                    )
-                }
-                    item {
-                    CategoryItem(
-                        name = "Recentes",
-                        streamCount = 0,
-                        isSelected = false,
-                        onClick = {
-                            viewModel.saveScrollPosition(
-                                listState.firstVisibleItemIndex,
-                                listState.firstVisibleItemScrollOffset
-                            )
-                            onNavigateToStream(RECENTS_CATEGORY_ID)
-                        },
-                            icon = Icons.Filled.History
-                        )
-                    }
+            item {
+                CategoryItem(
+                    name = "Favoritos",
+                    streamCount = 0,
+                    isSelected = false,
+                    onClick = {
+                        onNavigateToStream(FAVORITES_CATEGORY_ID)
+                    },
+                    modifier = Modifier.focusRequester(firstItemFocus),
+                    icon = Icons.Filled.Favorite
+                )
+            }
+            item {
+                CategoryItem(
+                    name = "Recentes",
+                    streamCount = 0,
+                    isSelected = false,
+                    onClick = {
+                        onNavigateToStream(RECENTS_CATEGORY_ID)
+                    },
+                    icon = Icons.Filled.History
+                )
+            }
                     item {
                         Spacer(Modifier.height(8.dp))
                         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
                         Spacer(Modifier.height(8.dp))
                     }
-                    item {
-                    CategoryItem(
-                        name = "Todos",
-                        streamCount = uiState.totalStreamCount,
-                        isSelected = false,
-                        onClick = {
-                            viewModel.saveScrollPosition(
-                                listState.firstVisibleItemIndex,
-                                listState.firstVisibleItemScrollOffset
-                            )
-                            onNavigateToStream(com.iptv.tv.ui.screens.home.ALL_CATEGORY_ID)
-                        },
-                            icon = Icons.Filled.Apps
-                        )
-                    }
+            item {
+                CategoryItem(
+                    name = "Todos",
+                    streamCount = uiState.totalStreamCount,
+                    isSelected = false,
+                    onClick = {
+                        onNavigateToStream(com.iptv.tv.ui.screens.home.ALL_CATEGORY_ID)
+                    },
+                    icon = Icons.Filled.Apps
+                )
+            }
 
-                items(viewModel.filteredCategories) { category ->
-                    CategoryItem(
-                        name = category.name,
-                        streamCount = category.streamCount,
-                        isSelected = false,
-                        onClick = {
-                            viewModel.saveScrollPosition(
-                                listState.firstVisibleItemIndex,
-                                listState.firstVisibleItemScrollOffset
-                            )
-                            onNavigateToStream(category.id)
-                        }
-                    )
-                }
+            items(viewModel.filteredCategories) { category ->
+                CategoryItem(
+                    name = category.name,
+                    streamCount = category.streamCount,
+                    isSelected = false,
+                    onClick = {
+                        onNavigateToStream(category.id)
+                    }
+                )
+            }
 
                     if (viewModel.filteredCategories.isEmpty() && uiState.categorySearch.isNotBlank()) {
                         item {

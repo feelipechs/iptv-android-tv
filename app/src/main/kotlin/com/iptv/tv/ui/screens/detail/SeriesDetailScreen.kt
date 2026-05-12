@@ -105,12 +105,8 @@ fun SeriesDetailScreen(
             ) {
                 CircularProgressIndicator()
             }
-        } else {
-            android.util.Log.d(
-                "SeriesUI",
-                "episodesForSelectedSeason: ${uiState.episodesForSelectedSeason.size}, selectedSeason: ${uiState.selectedSeason}, seriesInfo null: ${uiState.seriesInfo == null}"
-            )
-            LazyColumn(
+    } else {
+        LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {

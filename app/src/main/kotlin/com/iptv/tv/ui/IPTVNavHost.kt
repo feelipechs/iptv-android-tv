@@ -181,12 +181,8 @@ fun IPTVNavHost() {
                             )
                         }
 
-                        ContentType.SERIES -> {
-                            android.util.Log.d(
-                                "NavHost",
-                                "Navegando SERIES: streamId=${stream.id}, streamUrl=${stream.streamUrl}"
-                            )
-                            navController.navigate(
+                ContentType.SERIES -> {
+                    navController.navigate(
                                 Screen.SeriesDetail.route(
                                     streamId = stream.id,
                                     streamUrl = stream.streamUrl,

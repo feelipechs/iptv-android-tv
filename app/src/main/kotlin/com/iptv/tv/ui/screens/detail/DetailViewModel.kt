@@ -60,9 +60,8 @@ class DetailViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             runCatching {
-                val creds = credentialsRepository.getCredentials().first() ?: return@launch
-                // TODO: substituir por contentRepository.getVodInfo() quando disponível
-                _vodInfo.value = api.getVodInfo(
+            val creds = credentialsRepository.getCredentials().first() ?: return@launch
+            _vodInfo.value = api.getVodInfo(
                     creds.username,
                     creds.password,
                     vodId = streamId
@@ -85,9 +84,8 @@ class DetailViewModel @Inject constructor(
     private fun loadProgress(streamId: String) {
         viewModelScope.launch {
             watchHistoryRepository.observeHistoryEntry(streamId).collect { entry ->
-                val progress = if (entry != null && entry.progress > 0f) entry.progress else null
-                _savedProgress.value = progress
-                android.util.Log.d("DetailVM", "streamId=$streamId, savedProgress=$progress")
+            val progress = if (entry != null && entry.progress > 0f) entry.progress else null
+            _savedProgress.value = progress
             }
         }
     }

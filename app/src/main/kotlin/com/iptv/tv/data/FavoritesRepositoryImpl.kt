@@ -116,7 +116,6 @@ class WatchHistoryRepositoryImpl @Inject constructor(
         episodeUrl: String?
     ) {
         if (stream.name.isBlank() || stream.id.isBlank()) return
-        android.util.Log.d("HistoryRepo", "addToHistory chamado: streamId=${stream.id}, progress=$progress, name=${stream.name}")
         watchHistoryDao.addToHistory(
             streamId = stream.id,
             name = stream.name,

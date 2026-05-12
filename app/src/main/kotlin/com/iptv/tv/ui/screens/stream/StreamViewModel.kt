@@ -32,9 +32,7 @@ data class StreamUiState(
     val error: String? = null,
     val favoriteIds: Set<String> = emptySet(),
     val searchQuery: String = "",
-    val categoryName: String = "",
-    val savedScrollIndex: Int = 0,
-    val savedScrollOffset: Int = 0
+    val categoryName: String = ""
 )
 
 @HiltViewModel
@@ -71,8 +69,6 @@ class StreamViewModel @Inject constructor(
             else -> ""
         }
     )
-    private val _savedScrollIndex = MutableStateFlow(0)
-    private val _savedScrollOffset = MutableStateFlow(0)
 
     val uiState: StateFlow<StreamUiState> = combine(
         combine(_streams, _searchQuery, _favoriteIds) { streams, query, favIds ->
@@ -80,9 +76,8 @@ class StreamViewModel @Inject constructor(
         },
         combine(_isLoading, _error, _categoryName) { loading, error, catName ->
             Triple(loading, error, catName)
-        },
-        combine(_savedScrollIndex, _savedScrollOffset) { idx, off -> Pair(idx, off) }
-    ) { (streams, query, favIds), (loading, error, catName), (scrollIdx, scrollOff) ->
+        }
+    ) { (streams, query, favIds), (loading, error, catName) ->
         val filtered = if (query.isBlank()) streams else streams.filter { it.name.contains(query, ignoreCase = true) }
         StreamUiState(
             streams = filtered,
@@ -90,14 +85,11 @@ class StreamViewModel @Inject constructor(
             error = error,
             favoriteIds = favIds,
             searchQuery = query,
-            categoryName = catName,
-            savedScrollIndex = scrollIdx,
-            savedScrollOffset = scrollOff
+            categoryName = catName
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StreamUiState())
 
     init {
-        android.util.Log.d("StreamViewModel", "INIT: categoryId='$categoryId', type=$type, isSpecialCategory=$isSpecialCategory")
         loadStreams()
         observeFavorites()
         observeCategoryName()
@@ -193,10 +185,5 @@ class StreamViewModel @Inject constructor(
         viewModelScope.launch {
             watchHistoryRepository.addToHistory(stream, 0f)
         }
-    }
-
-    fun saveScrollPosition(index: Int, offset: Int) {
-        _savedScrollIndex.value = index
-        _savedScrollOffset.value = offset
     }
 }

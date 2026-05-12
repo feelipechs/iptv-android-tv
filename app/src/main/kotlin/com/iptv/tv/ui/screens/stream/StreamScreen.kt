@@ -39,10 +39,7 @@ fun StreamScreen(
     val searchFieldFocus = remember { FocusRequester() }
     var searchVisible by remember { mutableStateOf(false) }
 
-    val gridState = rememberLazyGridState(
-        initialFirstVisibleItemIndex = uiState.savedScrollIndex,
-        initialFirstVisibleItemScrollOffset = uiState.savedScrollOffset
-    )
+    val gridState = rememberLazyGridState()
 
     LaunchedEffect(searchVisible) {
         if (searchVisible) {
@@ -138,21 +135,17 @@ fun StreamScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                            itemsIndexed(uiState.streams, key = { _, stream -> stream.id }) { index, stream ->
-                                LiveChannelCard(
-                                    name = stream.name,
-                                    isFavorite = stream.id in uiState.favoriteIds,
-                                    onFavorite = { viewModel.toggleFavorite(stream) },
-                        onClick = {
-                            viewModel.saveScrollPosition(
-                                gridState.firstVisibleItemIndex,
-                                gridState.firstVisibleItemScrollOffset
-                            )
-                            onStreamSelected(stream)
-                        },
-                                    modifier = if (index == 0) Modifier.focusRequester(firstItemFocus) else Modifier
-                                )
-                            }
+                    itemsIndexed(uiState.streams, key = { _, stream -> stream.id }) { index, stream ->
+                        LiveChannelCard(
+                            name = stream.name,
+                            isFavorite = stream.id in uiState.favoriteIds,
+                            onFavorite = { viewModel.toggleFavorite(stream) },
+                            onClick = {
+                                onStreamSelected(stream)
+                            },
+                            modifier = if (index == 0) Modifier.focusRequester(firstItemFocus) else Modifier
+                        )
+                    }
                         }
                     }
             else -> {
@@ -163,26 +156,22 @@ fun StreamScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                itemsIndexed(uiState.streams, key = { _, stream -> stream.id }) { index, stream ->
+                    itemsIndexed(uiState.streams, key = { _, stream -> stream.id }) { index, stream ->
                         PosterCard(
                             name = stream.name,
                             posterUrl = stream.posterUrl,
                             isFavorite = stream.id in uiState.favoriteIds,
                             onFavorite = { viewModel.toggleFavorite(stream) },
-                        onClick = {
-                            viewModel.saveScrollPosition(
-                                gridState.firstVisibleItemIndex,
-                                gridState.firstVisibleItemScrollOffset
-                            )
-                            if (stream.type == ContentType.SERIES) {
-                                onStreamSelected(stream)
-                            } else {
-                                onStreamSelected(stream)
-                            }
-                        },
-                                    modifier = if (index == 0) Modifier.focusRequester(firstItemFocus) else Modifier
-                                )
-                            }
+                            onClick = {
+                                if (stream.type == ContentType.SERIES) {
+                                    onStreamSelected(stream)
+                                } else {
+                                    onStreamSelected(stream)
+                                }
+                            },
+                            modifier = if (index == 0) Modifier.focusRequester(firstItemFocus) else Modifier
+                        )
+                    }
                         }
                     }
                 }

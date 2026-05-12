@@ -69,12 +69,11 @@ class SeriesDetailViewModel @Inject constructor(
     private fun loadHistory() {
         viewModelScope.launch {
             watchHistoryRepository.observeHistoryEntry(streamId).collect { entry ->
-                _uiState.value = _uiState.value.copy(
-                    lastEpisodeUrl = entry?.lastEpisodeUrl,
-                    lastEpisodeNum = entry?.lastEpisodeNum,
-                    lastSeason = entry?.lastSeason
-                )
-                android.util.Log.d("SeriesDetailVM", "History atualizado: lastEpisodeUrl=${entry?.lastEpisodeUrl}, lastSeason=${entry?.lastSeason}, lastEpisodeNum=${entry?.lastEpisodeNum}")
+        _uiState.value = _uiState.value.copy(
+            lastEpisodeUrl = entry?.lastEpisodeUrl,
+            lastEpisodeNum = entry?.lastEpisodeNum,
+            lastSeason = entry?.lastSeason
+        )
             }
         }
     }
@@ -117,15 +116,9 @@ class SeriesDetailViewModel @Inject constructor(
             selectedSeason = selectedSeason,
             episodesForSelectedSeason = response.episodes?.get(selectedSeason) ?: emptyList(),
             episodeStreamUrls = urlMap,
-            isLoading = false
+        isLoading = false
         )
-        android.util.Log.d("SeriesDetail", "Número de temporadas na API: ${response.episodes?.size ?: 0}")
-        android.util.Log.d("SeriesDetail", "Chaves do mapa de episódios: ${response.episodes?.keys}")
-        response.episodes?.forEach { (seasonKey, eps) ->
-            android.util.Log.d("SeriesDetail", "  Temporada '$seasonKey': ${eps.size} episódios")
-        }
-        android.util.Log.d("SeriesDetail", "Temporada selecionada: $selectedSeason")
-        }.onFailure { e ->
+    }.onFailure { e ->
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
                 error = e.message ?: "Erro ao carregar série"
